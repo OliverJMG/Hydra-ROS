@@ -1,0 +1,17 @@
+z_offset_scale: 0.0
+visualize: true
+# nodes
+node_scale: 0.1
+node_alpha: 1.0
+node_use_sphere: false
+node_color_mode: "PrefixColorAdaptor"
+# edges
+edge_scale: 0.03
+edge_alpha: 1.0
+# label
+label_mode: "NameLabelAdaptor"
+label_height: 1.0
+label_scale: 0.5
+# interlayer
+interlayer_edge_insertion_skip: 0
+visualize_interlayer_edges: false

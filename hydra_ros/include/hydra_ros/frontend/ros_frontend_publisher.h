@@ -34,7 +34,7 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/frontend/graph_builder.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "hydra_ros/utils/dsg_streaming_interface.h"
 

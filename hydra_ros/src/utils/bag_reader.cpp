@@ -38,18 +38,18 @@
 #include <config_utilities/printing.h>
 #include <config_utilities/types/path.h>
 #include <config_utilities/validation.h>
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/TransformStamped.h>
+#include <cv_bridge/cv_bridge.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
 #include <hydra/input/camera.h>
 #include <hydra/input/input_packet.h>
 #include <hydra/input/input_conversion.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
-#include <sensor_msgs/CameraInfo.h>
-#include <sensor_msgs/CompressedImage.h>
+// #include <rosbag/bag.h>
+// #include <rosbag/view.h>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/compressed_image.hpp>
 
 #include "hydra_ros/utils/pose_cache.h"
 

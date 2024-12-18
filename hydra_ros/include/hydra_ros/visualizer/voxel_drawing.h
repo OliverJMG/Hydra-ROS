@@ -35,8 +35,8 @@
 #pragma once
 #include <hydra_visualizer/utils/visualizer_utilities.h>
 #include <spatial_hash/voxel_layer.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <visualization_msgs/Marker.h>
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 namespace hydra {
 

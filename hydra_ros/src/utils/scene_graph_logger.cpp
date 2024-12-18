@@ -35,7 +35,7 @@
 #include "hydra_ros/utils/scene_graph_logger.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <config_utilities/types/path.h>
 #include <config_utilities/validation.h>

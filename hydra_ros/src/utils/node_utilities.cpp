@@ -37,8 +37,8 @@
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
 #include <hydra/utils/timing_utilities.h>
-#include <ros/topic_manager.h>
-#include <rosgraph_msgs/Clock.h>
+#include <rclcpp/rclcpp.hpp>
+#include <rosgraph_msgs/msg/clock.hpp>
 
 namespace hydra {
 

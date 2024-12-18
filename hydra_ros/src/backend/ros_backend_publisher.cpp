@@ -35,22 +35,22 @@
 #include "hydra_ros/backend/ros_backend_publisher.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <config_utilities/validation.h>
 #include <hydra/common/global_info.h>
 #include <kimera_pgmo_ros/visualization_functions.h>
-#include <pose_graph_tools_msgs/PoseGraph.h>
+#include <nav_interfaces/msg/pose_graph.hpp>
 #include <pose_graph_tools_ros/conversions.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 namespace hydra {
 
 using kimera_pgmo::DeformationGraph;
 using kimera_pgmo::KimeraPgmoConfig;
-using kimera_pgmo_msgs::KimeraPgmoMesh;
-using pose_graph_tools_msgs::PoseGraph;
-using visualization_msgs::Marker;
+using kimera_pgmo_msgs::msg::KimeraPgmoMesh;
+using nav_interfaces::msg::PoseGraph;
+using visualization_msgs::msg::Marker;
 
 void declare_config(RosBackendPublisher::Config& config) {
   using namespace config;

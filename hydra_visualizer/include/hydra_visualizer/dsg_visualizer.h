@@ -35,18 +35,23 @@
 #pragma once
 
 #include <config_utilities/virtual_config.h>
-#include <ros/ros.h>
-#include <std_srvs/Empty.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 #include <fstream>
 
-#include "hydra_visualizer/io/graph_wrapper.h"
-#include "hydra_visualizer/plugins/visualizer_plugin.h"
+#include "hydra_visualizer/io/graph_file_wrapper.h"
+#include "hydra_visualizer/io/graph_ros_wrapper.h"
+#include "hydra_visualizer/io/graph_zmq_wrapper.h"
+#include "hydra_visualizer/plugins/basis_point_plugin.h"
+#include "hydra_visualizer/plugins/footprint_plugin.h"
+#include "hydra_visualizer/plugins/khronos_object_plugin.h"
+#include "hydra_visualizer/plugins/mesh_plugin.h"
 #include "hydra_visualizer/scene_graph_renderer.h"
 
 namespace hydra {
 
-class DsgVisualizer {
+class DsgVisualizer : public rclcpp::Node {
  public:
   struct Config {
     std::string ns = "~";
@@ -55,12 +60,15 @@ class DsgVisualizer {
     config::VirtualConfig<GraphWrapper> graph;
     // Specify additional plugins that should be loaded <name, config>
     std::map<std::string, config::VirtualConfig<VisualizerPlugin>> plugins;
-  } const config;
+  } config;
 
-  //! Construct the visualizer from a config
-  explicit DsgVisualizer(const Config& config);
+  //! Construct the visualizer
+  explicit DsgVisualizer();
 
   ~DsgVisualizer() = default;
+
+  //! Set up the config, node must be initialized first
+  void configure();
 
   //! Loop and redraw when changes occur
   void start();
@@ -77,17 +85,16 @@ class DsgVisualizer {
  private:
   void spinOnce(bool force = false);
 
-  bool redraw(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
-  bool reset(std_srvs::Empty::Request&, std_srvs::Empty::Response&);
+  void redraw(std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr);
+  void reset_cb(std_srvs::srv::Empty::Request::SharedPtr, std_srvs::srv::Empty::Response::SharedPtr);
 
-  ros::NodeHandle nh_;
-  ros::WallTimer loop_timer_;
+  rclcpp::TimerBase::SharedPtr loop_timer_;
 
   GraphWrapper::Ptr graph_;
   SceneGraphRenderer::Ptr renderer_;
   std::vector<VisualizerPlugin::Ptr> plugins_;
-  ros::ServiceServer redraw_service_;
-  ros::ServiceServer reset_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr redraw_service_;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_service_;
 };
 
 void declare_config(DsgVisualizer::Config& config);

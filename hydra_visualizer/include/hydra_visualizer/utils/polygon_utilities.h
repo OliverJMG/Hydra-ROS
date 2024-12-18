@@ -36,7 +36,7 @@
 #pragma once
 
 #include <spark_dsg/dynamic_scene_graph.h>
-#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <Eigen/Dense>
 #include <optional>
@@ -58,14 +58,14 @@ Eigen::MatrixXd getChildrenConvexHull(const spark_dsg::DynamicSceneGraph& graph,
                                       const spark_dsg::SceneGraphNode& parent);
 
 void makeFilledPolygon(const Eigen::MatrixXd& points,
-                       const std_msgs::ColorRGBA& color,
-                       visualization_msgs::Marker& marker,
+                       const std_msgs::msg::ColorRGBA& color,
+                       visualization_msgs::msg::Marker& marker,
                        std::optional<double> height = std::nullopt);
 
 void makePolygonBoundary(const Eigen::MatrixXd& points,
-                         const std_msgs::ColorRGBA& color,
-                         visualization_msgs::Marker& edges,
+                         const std_msgs::msg::ColorRGBA& color,
+                         visualization_msgs::msg::Marker& edges,
                          std::optional<double> height = std::nullopt,
-                         visualization_msgs::Marker* corners = nullptr);
+                         visualization_msgs::msg::Marker* corners = nullptr);
 
 }  // namespace hydra

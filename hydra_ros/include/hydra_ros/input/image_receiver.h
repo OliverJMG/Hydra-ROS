@@ -35,7 +35,7 @@
 #pragma once
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/Image.h>
+#include <sensor_msgs/msg/image.hpp>
 
 #include "hydra_ros/input/ros_data_receiver.h"
 

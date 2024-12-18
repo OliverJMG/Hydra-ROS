@@ -32,7 +32,7 @@
  * Government is authorized to reproduce and distribute reprints for Government
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <filesystem>
 

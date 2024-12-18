@@ -78,7 +78,7 @@
 #include <config_utilities/validation.h>
 #include <spark_dsg/colormaps.h>
 #include <spark_dsg/node_symbol.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include "hydra_visualizer/color/color_parsing.h"
 #include "hydra_visualizer/utils/visualizer_utilities.h"
@@ -89,8 +89,8 @@ namespace colormaps = spark_dsg::colormaps;
 using spark_dsg::Color;
 using spark_dsg::DynamicSceneGraph;
 using spark_dsg::KhronosObjectAttributes;
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 void declare_config(KhronosObjectPlugin::Config& config) {
   using namespace config;
@@ -108,15 +108,16 @@ void declare_config(KhronosObjectPlugin::Config& config) {
 }
 
 KhronosObjectPlugin::KhronosObjectPlugin(const Config& config,
-                                         const ros::NodeHandle& nh,
+                                         const rclcpp::Node::SharedPtr node,
                                          const std::string& name)
-    : VisualizerPlugin(nh, name), config(config::checkValid(config)) {
-  dynamic_pub_ = nh_.advertise<MarkerArray>("dynamic_objects", config.queue_size);
-  static_pub_ = nh_.advertise<kimera_pgmo_msgs::KimeraPgmoMesh>("static_objects",
+    : VisualizerPlugin(node, name), config(config::checkValid(config)), 
+      tf_broadcaster_(node) {
+  dynamic_pub_ = node_->create_publisher<MarkerArray>("dynamic_objects", config.queue_size);
+  static_pub_ = node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("static_objects",
                                                                 config.queue_size);
 }
 
-void KhronosObjectPlugin::draw(const std_msgs::Header& header,
+void KhronosObjectPlugin::draw(const std_msgs::msg::Header& header,
                                const DynamicSceneGraph& graph) {
   if (!graph.hasLayer(spark_dsg::DsgLayers::OBJECTS)) {
     return;
@@ -125,12 +126,12 @@ void KhronosObjectPlugin::draw(const std_msgs::Header& header,
   drawStaticObjects(header, graph);
 }
 
-void KhronosObjectPlugin::reset(const std_msgs::Header& header) {
+void KhronosObjectPlugin::reset(const std_msgs::msg::Header& header) {
   // Reset dynamic markers.
   MarkerArray dynamic_msg;
   tracker_.clearPrevious(header, dynamic_msg);
   if (!dynamic_msg.markers.empty()) {
-    dynamic_pub_.publish(dynamic_msg);
+    dynamic_pub_->publish(dynamic_msg);
   }
 
   // Reset static meshes.
@@ -140,9 +141,9 @@ void KhronosObjectPlugin::reset(const std_msgs::Header& header) {
   previous_objects_.clear();
 }
 
-void KhronosObjectPlugin::drawDynamicObjects(const std_msgs::Header& header,
+void KhronosObjectPlugin::drawDynamicObjects(const std_msgs::msg::Header& header,
                                              const DynamicSceneGraph& graph) {
-  if (dynamic_pub_.getNumSubscribers() == 0) {
+  if (dynamic_pub_->get_subscription_count() == 0) {
     return;
   }
 
@@ -205,12 +206,12 @@ void KhronosObjectPlugin::drawDynamicObjects(const std_msgs::Header& header,
 
   // Clear objects that are no longer present.
   tracker_.clearPrevious(header, msg);
-  dynamic_pub_.publish(msg);
+  dynamic_pub_->publish(msg);
 }
 
-void KhronosObjectPlugin::drawStaticObjects(const std_msgs::Header& header,
+void KhronosObjectPlugin::drawStaticObjects(const std_msgs::msg::Header& header,
                                             const DynamicSceneGraph& dsg) {
-  if (static_pub_.getNumSubscribers() == 0) {
+  if (static_pub_->get_subscription_count() == 0) {
     return;
   }
 
@@ -235,7 +236,7 @@ void KhronosObjectPlugin::drawStaticObjects(const std_msgs::Header& header,
     auto msg = visualizer::makeMeshMsg(header, attrs->mesh, getNamespace(id), coloring);
     msg.header = header;
     msg.header.frame_id = getFrameName(id);
-    static_pub_.publish(msg);
+    static_pub_->publish(msg);
   }
 
   // Delete objects no longer present.
@@ -258,18 +259,18 @@ std::string KhronosObjectPlugin::getFrameName(const uint64_t id) {
   return "khronos_object_" + std::to_string(id);
 }
 
-void KhronosObjectPlugin::resetObject(const std_msgs::Header& header,
+void KhronosObjectPlugin::resetObject(const std_msgs::msg::Header& header,
                                       const uint64_t id) {
-  kimera_pgmo_msgs::KimeraPgmoMesh msg;
+  kimera_pgmo_msgs::msg::KimeraPgmoMesh msg;
   msg.header = header;
   msg.ns = getNamespace(id);
-  static_pub_.publish(msg);
+  static_pub_->publish(msg);
 }
 
-void KhronosObjectPlugin::publishTransform(const std_msgs::Header& header,
+void KhronosObjectPlugin::publishTransform(const std_msgs::msg::Header& header,
                                            const KhronosObjectAttributes& attrs,
                                            const uint64_t id) {
-  geometry_msgs::TransformStamped msg;
+  geometry_msgs::msg::TransformStamped msg;
   msg.header = header;
   msg.child_frame_id = getFrameName(id);
   // The khronos meshes are in bounding box coordinates.

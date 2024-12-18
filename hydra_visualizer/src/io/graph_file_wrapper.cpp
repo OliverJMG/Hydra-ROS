@@ -54,12 +54,12 @@ void declare_config(GraphFileWrapper::Config& config) {
 
 GraphFileWrapper::GraphFileWrapper(const Config& config)
     : config(config::checkValid(config)),
-      nh_(config.wrapper_ns),
+      // node_(),
       has_change_(true),
       filepath_(config.filepath),
-      graph_(DynamicSceneGraph::load(filepath_)),
-      service_(nh_.advertiseService("reload", &GraphFileWrapper::reload, this)),
-      sub_(nh_.subscribe("load", 1, &GraphFileWrapper::load, this)) {}
+      graph_(DynamicSceneGraph::load(filepath_)) {}
+      // service_(nh_.advertiseService("reload", &GraphFileWrapper::reload, this)),
+      // sub_(nh_.subscribe("load", 1, &GraphFileWrapper::load, this)) {}
 
 bool GraphFileWrapper::hasChange() const { return has_change_; }
 
@@ -67,22 +67,22 @@ void GraphFileWrapper::clearChangeFlag() { has_change_ = false; }
 
 StampedGraph GraphFileWrapper::get() const { return {graph_}; }
 
-bool GraphFileWrapper::reload(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
-  graph_ = DynamicSceneGraph::load(filepath_);
-  has_change_ = true;
-  return true;
-}
+// bool GraphFileWrapper::reload(std_srvs::srv::Empty::Request, std_srvs::srv::Empty::Response) {
+//   graph_ = DynamicSceneGraph::load(filepath_);
+//   has_change_ = true;
+//   return true;
+// }
 
-void GraphFileWrapper::load(const std_msgs::String& msg) {
-  std::filesystem::path req_path(msg.data);
-  if (!std::filesystem::exists(req_path)) {
-    LOG(ERROR) << "Graph does not exist at '" << req_path.string() << "'";
-    return;
-  }
+// void GraphFileWrapper::load(const std_msgs::msg::String::SharedPtr& msg) {
+//   std::filesystem::path req_path(msg->data);
+//   if (!std::filesystem::exists(req_path)) {
+//     LOG(ERROR) << "Graph does not exist at '" << req_path.string() << "'";
+//     return;
+//   }
 
-  filepath_ = req_path;
-  graph_ = DynamicSceneGraph::load(filepath_);
-  has_change_ = true;
-}
+//   filepath_ = req_path;
+//   graph_ = DynamicSceneGraph::load(filepath_);
+//   has_change_ = true;
+// }
 
 }  // namespace hydra

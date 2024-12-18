@@ -33,12 +33,12 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <kimera_pgmo_msgs/KimeraPgmoMesh.h>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh.hpp>
 #include <spark_dsg/bounding_box.h>
 #include <spark_dsg/color.h>
 #include <spark_dsg/dynamic_scene_graph.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "hydra_visualizer/color/mesh_color_adaptor.h"
 #include "hydra_visualizer/utils/visualizer_types.h"
@@ -51,77 +51,77 @@ using spark_dsg::EdgeContainer;
 using spark_dsg::SceneGraphLayer;
 
 void drawBoundingBox(const spark_dsg::BoundingBox& bbox,
-                     const std_msgs::ColorRGBA& color,
-                     visualization_msgs::Marker& marker);
+                     const std_msgs::msg::ColorRGBA& color,
+                     visualization_msgs::msg::Marker& marker);
 
-visualization_msgs::MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
+visualization_msgs::msg::MarkerArray makeLayerBoundingBoxes(const std_msgs::msg::Header& header,
                                                        const StaticLayerInfo& info,
                                                        const SceneGraphLayer& layer,
                                                        const std::string& ns);
 
-visualization_msgs::Marker makeLayerEllipseBoundaries(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeLayerEllipseBoundaries(const std_msgs::msg::Header& header,
                                                       const StaticLayerInfo& info,
                                                       const SceneGraphLayer& layer,
                                                       const std::string& ns);
 
-visualization_msgs::Marker makeLayerPolygonEdges(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeLayerPolygonEdges(const std_msgs::msg::Header& header,
                                                  const StaticLayerInfo& info,
                                                  const SceneGraphLayer& layer,
                                                  const std::string& ns);
 
-visualization_msgs::Marker makeLayerPolygonBoundaries(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeLayerPolygonBoundaries(const std_msgs::msg::Header& header,
                                                       const StaticLayerInfo& info,
                                                       const SceneGraphLayer& layer,
                                                       const std::string& ns);
 
-visualization_msgs::MarkerArray makeEllipsoidMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::MarkerArray makeEllipsoidMarkers(const std_msgs::msg::Header& header,
                                                      const StaticLayerInfo& info,
                                                      const SceneGraphLayer& layer,
                                                      const std::string& ns);
 
-visualization_msgs::MarkerArray makeLayerLabelMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::MarkerArray makeLayerLabelMarkers(const std_msgs::msg::Header& header,
                                                       const StaticLayerInfo& info,
                                                       const SceneGraphLayer& layer,
                                                       const std::string& ns);
 
-visualization_msgs::Marker makeLayerNodeMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeLayerNodeMarkers(const std_msgs::msg::Header& header,
                                                 const StaticLayerInfo& info,
                                                 const SceneGraphLayer& layer,
                                                 const std::string& ns);
 
-visualization_msgs::Marker makeLayerEdgeMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeLayerEdgeMarkers(const std_msgs::msg::Header& header,
                                                 const StaticLayerInfo& config,
                                                 const SceneGraphLayer& layer,
                                                 const std::string& ns);
 
-visualization_msgs::Marker makeMeshEdgesMarker(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeMeshEdgesMarker(const std_msgs::msg::Header& header,
                                                const StaticLayerInfo& info,
                                                const DynamicSceneGraph& graph,
                                                const SceneGraphLayer& layer,
                                                const std::string& ns);
 
-visualization_msgs::Marker makeDynamicNodeMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeDynamicNodeMarkers(const std_msgs::msg::Header& header,
                                                   const DynamicLayerInfo& info,
                                                   const DynamicSceneGraphLayer& layer,
                                                   const std::string& ns);
 
-visualization_msgs::Marker makeDynamicEdgeMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeDynamicEdgeMarkers(const std_msgs::msg::Header& header,
                                                   const DynamicLayerInfo& info,
                                                   const DynamicSceneGraphLayer& layer,
                                                   const std::string& ns);
 
-visualization_msgs::Marker makeDynamicLabelMarker(const std_msgs::Header& header,
+visualization_msgs::msg::Marker makeDynamicLabelMarker(const std_msgs::msg::Header& header,
                                                   const DynamicLayerInfo& info,
                                                   const DynamicSceneGraphLayer& layer,
                                                   const std::string& ns);
 
-visualization_msgs::MarkerArray makeGraphEdgeMarkers(const std_msgs::Header& header,
+visualization_msgs::msg::MarkerArray makeGraphEdgeMarkers(const std_msgs::msg::Header& header,
                                                      const GraphInfo& info,
                                                      const DynamicSceneGraph& graph,
                                                      const EdgeContainer::Edges& edges,
                                                      const std::string& ns);
 
-kimera_pgmo_msgs::KimeraPgmoMesh makeMeshMsg(const std_msgs::Header& header,
+kimera_pgmo_msgs::msg::KimeraPgmoMesh makeMeshMsg(const std_msgs::msg::Header& header,
                                              const spark_dsg::Mesh& mesh,
                                              const std::string& ns,
                                              MeshColoring::Ptr coloring = nullptr);

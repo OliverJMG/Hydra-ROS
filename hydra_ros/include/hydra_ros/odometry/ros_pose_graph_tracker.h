@@ -49,9 +49,8 @@
 
 #include <config_utilities/factory.h>
 #include <hydra/odometry/pose_graph_tracker.h>
-#include <pose_graph_tools_msgs/PoseGraph.h>
-#include <ros/node_handle.h>
-#include <ros/subscriber.h>
+#include <pose_graph_tools_msgs/msg/pose_graph.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 #include <mutex>
 

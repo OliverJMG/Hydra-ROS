@@ -6,55 +6,27 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(ament_cmake REQUIRED)
+# find_package(ament_cmake_python REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc)
 find_package(hydra REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
 find_package(gflags REQUIRED)
-find_package(
-  catkin REQUIRED
-  COMPONENTS cv_bridge
-             dynamic_reconfigure
-             geometry_msgs
-             hydra_msgs
-             hydra_visualizer
-             image_transport
-             kimera_pgmo_ros
-             kimera_pgmo_msgs
-             rosbag
-             roscpp
-             std_msgs
-             tf2_eigen
-             tf2_ros
-             visualization_msgs
-             pose_graph_tools_ros
-             pose_graph_tools_msgs
-)
+find_package(cv_bridge REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(hydra_msgs REQUIRED)
+find_package(hydra_visualizer REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(kimera_pgmo_ros REQUIRED)
+find_package(kimera_pgmo_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(pose_graph_tools_ros REQUIRED)
+find_package(nav_interfaces REQUIRED)
 
-catkin_python_setup()
-
-generate_dynamic_reconfigure_options(cfg/GvdVisualizer.cfg)
-
-catkin_package(
-  CATKIN_DEPENDS
-  cv_bridge
-  dynamic_reconfigure
-  geometry_msgs
-  hydra_msgs
-  image_transport
-  kimera_pgmo_ros
-  kimera_pgmo_msgs
-  rosbag
-  roscpp
-  std_msgs
-  tf2_eigen
-  tf2_ros
-  visualization_msgs
-  pose_graph_tools_ros
-  pose_graph_tools_msgs
-  DEPENDS hydra PCL OpenCV
-  INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}
-)
 
 add_library(
   ${PROJECT_NAME}
@@ -89,17 +61,31 @@ add_library(
   src/visualizer/feature_color_adaptors.cpp
 )
 target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC include ${catkin_INCLUDE_DIRS}
-  PRIVATE ${OpenCV_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR}
+  ${PROJECT_NAME} PUBLIC 
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/>
+  PRIVATE ${OpenCV_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS}
 )
 target_link_libraries(
   ${PROJECT_NAME}
-  PUBLIC ${catkin_LIBRARIES} hydra::hydra
+  PUBLIC hydra::hydra
   PRIVATE ${OpenCV_LIBRARIES} ${PCL_LIBRARIES}
 )
-add_dependencies(
-  ${PROJECT_NAME} ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS}
+ament_target_dependencies(${PROJECT_NAME} PUBLIC
+  cv_bridge
+  geometry_msgs
+  hydra_msgs
+  hydra_visualizer
+  image_transport
+  kimera_pgmo_ros
+  kimera_pgmo_msgs
+  rclcpp
+  std_msgs
+  tf2_eigen
+  tf2_ros
+  visualization_msgs
+  pose_graph_tools_ros
+  nav_interfaces
 )
 
 find_package(semantic_inference_msgs QUIET)
@@ -124,31 +110,33 @@ target_link_libraries(scene_graph_logger_node ${PROJECT_NAME})
 add_executable(reconstruct_mesh app/reconstruct_mesh.cpp)
 target_link_libraries(reconstruct_mesh ${PROJECT_NAME} ${gflags_LIBRARIES})
 
-if(CATKIN_ENABLE_TESTING)
-  add_subdirectory(tests)
-endif()
+# if(BUILD_TESTING)
+#   add_subdirectory(tests)
+# endif()
 
 install(
   TARGETS ${PROJECT_NAME}
-          hydra_ros_node
-          scene_graph_logger_node
-          reconstruct_mesh
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY include/${PROJECT_NAME}/
-        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+install(TARGETS 
+  hydra_ros_node
+  scene_graph_logger_node
+  reconstruct_mesh
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
-
-catkin_install_python(
-  PROGRAMS
-  app/dsg_republisher
-  app/csv_to_tf
-  app/odom_to_tf
-  DESTINATION
-  ${CATKIN_PACKAGE_BIN_DESTINATION}
+install(DIRECTORY include/
+        DESTINATION include/
 )
+
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+
+# ament_python_install_package(${PROJECT_NAME})
+
+ament_package()

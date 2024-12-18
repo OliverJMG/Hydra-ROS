@@ -35,15 +35,15 @@
 #include "hydra_ros/frontend/ros_frontend_publisher.h"
 
 #include <hydra/common/global_info.h>
-#include <kimera_pgmo_msgs/KimeraPgmoMeshDelta.h>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh_delta.hpp>
 #include <kimera_pgmo_ros/conversion/mesh_delta_conversion.h>
-#include <pose_graph_tools_msgs/PoseGraph.h>
+#include <nav_interfaces/msg/pose_graph.hpp>
 #include <pose_graph_tools_ros/conversions.h>
 
 namespace hydra {
 
-using kimera_pgmo_msgs::KimeraPgmoMeshDelta;
-using pose_graph_tools_msgs::PoseGraph;
+using kimera_pgmo_msgs::msg::KimeraPgmoMeshDelta;
+using pose_graph_tools_msgs::msg::PoseGraph;
 
 RosFrontendPublisher::RosFrontendPublisher(const ros::NodeHandle& node_handle)
     : nh_(node_handle) {

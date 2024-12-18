@@ -33,7 +33,7 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <map>
 #include <string>

@@ -34,9 +34,9 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/common/dsg_types.h>
-#include <hydra_msgs/DsgUpdate.h>
-#include <kimera_pgmo_msgs/KimeraPgmoMesh.h>
-#include <ros/ros.h>
+#include <hydra_msgs/msg/dsg_update.hpp>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 #include <optional>
 

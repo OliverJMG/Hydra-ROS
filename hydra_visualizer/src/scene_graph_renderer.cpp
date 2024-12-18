@@ -35,12 +35,12 @@
 #include "hydra_visualizer/scene_graph_renderer.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
 #include <spark_dsg/node_attributes.h>
-#include <std_msgs/String.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <std_msgs/msg/string.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include "hydra_visualizer/color/colormap_utilities.h"
 #include "hydra_visualizer/utils/config_manager.h"
@@ -51,8 +51,8 @@ namespace hydra {
 using namespace spark_dsg;
 using namespace visualizer;
 
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 struct MarkerNamespaces {
   static std::string layerNodeNamespace(spark_dsg::LayerId layer) {
@@ -100,16 +100,16 @@ struct MarkerNamespaces {
   }
 };
 
-SceneGraphRenderer::SceneGraphRenderer(const ros::NodeHandle& nh)
-    : nh_(nh), pub_(nh_.advertise<MarkerArray>("dsg_markers", 1, true)) {
+SceneGraphRenderer::SceneGraphRenderer(const rclcpp::Node::SharedPtr nh)
+    : nh_(nh), pub_(nh_->create_publisher<MarkerArray>("dsg_markers", 1)) {
   ConfigManager::init(nh_);
 }
 
-void SceneGraphRenderer::reset(const std_msgs::Header& header) {
+void SceneGraphRenderer::reset(const std_msgs::msg::Header& header) {
   MarkerArray msg;
   tracker_.clearPrevious(header, msg);
   if (!msg.markers.empty()) {
-    pub_.publish(msg);
+    pub_->publish(msg);
   }
 
   // TODO(nathan) think if we actually want to do this
@@ -124,7 +124,7 @@ void SceneGraphRenderer::clearChangeFlag() {
   ConfigManager::instance().clearChangeFlags();
 }
 
-void SceneGraphRenderer::draw(const std_msgs::Header& header,
+void SceneGraphRenderer::draw(const std_msgs::msg::Header& header,
                               const DynamicSceneGraph& graph) {
   visualizer::GraphInfo info;
   const auto& manager = ConfigManager::instance();
@@ -161,11 +161,11 @@ void SceneGraphRenderer::draw(const std_msgs::Header& header,
 
   tracker_.clearPrevious(header, msg);
   if (!msg.markers.empty()) {
-    pub_.publish(msg);
+    pub_->publish(msg);
   }
 }
 
-void SceneGraphRenderer::drawLayer(const std_msgs::Header& header,
+void SceneGraphRenderer::drawLayer(const std_msgs::msg::Header& header,
                                    const StaticLayerInfo& info,
                                    const SceneGraphLayer& layer,
                                    MarkerArray& msg) {
@@ -234,7 +234,7 @@ void SceneGraphRenderer::drawLayer(const std_msgs::Header& header,
   tracker_.add(makeLayerEdgeMarkers(header, info, layer, edge_ns), msg);
 }
 
-void SceneGraphRenderer::drawDynamicLayer(const std_msgs::Header& header,
+void SceneGraphRenderer::drawDynamicLayer(const std_msgs::msg::Header& header,
                                           const DynamicLayerInfo& info,
                                           const DynamicSceneGraphLayer& layer,
                                           MarkerArray& msg) {

@@ -33,9 +33,9 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
-#include <std_msgs/String.h>
+#include <std_msgs/msg/string.hpp>
 
 #include "hydra_visualizer/color/graph_color_adaptors.h"
 #include "hydra_visualizer/utils/config_wrapper.h"
@@ -44,14 +44,14 @@
 
 namespace hydra::visualizer {
 
-const std::string& getColorMode(const hydra_visualizer::LayerVisualizerConfig& config);
+const std::string& getColorMode(const hydra::visualizer::LayerVisualizerConfig& config);
 const std::string& getColorMode(
-    const hydra_visualizer::DynamicLayerVisualizerConfig& config);
+    const hydra::visualizer::DynamicLayerVisualizerConfig& config);
 
 class ColorManager {
  public:
   using ColorFunc = std::function<spark_dsg::Color(const spark_dsg::SceneGraphNode&)>;
-  ColorManager(const ros::NodeHandle& nh, spark_dsg::LayerId layer);
+  ColorManager(const rclcpp::Node::SharedPtr node, spark_dsg::LayerId layer);
   ColorFunc get(const spark_dsg::DynamicSceneGraph& graph) const;
   void set(const std::string& mode);
   bool hasChange() const;
@@ -59,12 +59,12 @@ class ColorManager {
 
  private:
   void setAdaptor();
-  void callback(const std_msgs::String& msg);
+  void callback(const std_msgs::msg::String::ConstSharedPtr& msg);
 
   bool has_change_;
   std::string mode_;
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
   spark_dsg::LayerId layer_;
   std::string curr_contents_;
   std::unique_ptr<GraphColorAdaptor> adaptor_;
@@ -73,7 +73,7 @@ class ColorManager {
 class LabelManager {
  public:
   using LabelFunc = std::function<std::string(const spark_dsg::SceneGraphNode&)>;
-  explicit LabelManager(const ros::NodeHandle& nh);
+  explicit LabelManager(const rclcpp::Node::SharedPtr node);
   LabelFunc get() const;
   void set(const std::string& mode);
   bool hasChange() const;
@@ -81,12 +81,12 @@ class LabelManager {
 
  private:
   void setAdaptor();
-  void callback(const std_msgs::String& msg);
+  void callback(const std_msgs::msg::String::ConstSharedPtr& msg);
 
   bool has_change_;
   std::string mode_;
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
   std::string curr_contents_;
   GraphLabelAdaptor::Ptr adaptor_;
 };
@@ -94,12 +94,14 @@ class LabelManager {
 template <typename ConfigT>
 class LayerConfig {
  public:
-  LayerConfig(const ros::NodeHandle& nh,
+  LayerConfig(const std::string& path,
               const std::string& ns,
+              rclcpp::Node::SharedPtr node,
               spark_dsg::LayerId layer)
-      : color(std::make_unique<ColorManager>(ros::NodeHandle(nh, ns), layer)),
-        label(std::make_unique<LabelManager>(ros::NodeHandle(nh, ns))),
-        config(std::make_unique<ConfigWrapper<ConfigT>>(nh, ns)) {
+      : color(std::make_unique<ColorManager>(node, layer)),
+        label(std::make_unique<LabelManager>(node)),
+        config(std::make_unique<ConfigWrapper<ConfigT>>(path, ns)),
+        node_(node) {
     setCallback();
   }
 
@@ -110,7 +112,8 @@ class LayerConfig {
   LayerConfig(LayerConfig&& other)
       : color(std::move(other.color)),
         label(std::move(other.label)),
-        config(std::move(other.config)) {
+        config(std::move(other.config)),
+        node_(other.node_) {
     setCallback();
   }
 
@@ -148,10 +151,13 @@ class LayerConfig {
       label->set(c.label_mode);
     });
   }
+
+  protected:
+    rclcpp::Node::SharedPtr node_;
 };
 
-using StaticLayerConfig = LayerConfig<hydra_visualizer::LayerVisualizerConfig>;
-using DynamicLayerConfig = LayerConfig<hydra_visualizer::DynamicLayerVisualizerConfig>;
+using StaticLayerConfig = LayerConfig<hydra::visualizer::LayerVisualizerConfig>;
+using DynamicLayerConfig = LayerConfig<hydra::visualizer::DynamicLayerVisualizerConfig>;
 
 class ConfigManager {
  public:
@@ -162,7 +168,7 @@ class ConfigManager {
 
   static ConfigManager& instance();
 
-  static void init(const ros::NodeHandle& nh);
+  static void init(const rclcpp::Node::SharedPtr node);
 
   static void reset();
 
@@ -172,7 +178,7 @@ class ConfigManager {
 
   void clearChangeFlags();
 
-  const hydra_visualizer::VisualizerConfig& getVisualizerConfig() const;
+  const hydra::visualizer::VisualizerConfig& getVisualizerConfig() const;
 
   const StaticLayerConfig& getLayerConfig(spark_dsg::LayerId layer) const;
 
@@ -183,8 +189,9 @@ class ConfigManager {
 
   inline static std::unique_ptr<ConfigManager> s_instance_ = nullptr;
 
-  ros::NodeHandle nh_;
-  mutable ConfigWrapper<hydra_visualizer::VisualizerConfig>::Ptr visualizer_config_;
+  rclcpp::Node::SharedPtr node_;
+
+  mutable ConfigWrapper<hydra::visualizer::VisualizerConfig>::Ptr visualizer_config_;
   mutable LayerMap<StaticLayerConfig> layers_;
   mutable LayerMap<DynamicLayerConfig> dynamic_layers_;
 };

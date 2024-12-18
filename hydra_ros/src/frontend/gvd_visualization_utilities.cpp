@@ -36,7 +36,7 @@
 
 #include <hydra_visualizer/color/colormap_utilities.h>
 #include <hydra_visualizer/utils/visualizer_utilities.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <random>
 

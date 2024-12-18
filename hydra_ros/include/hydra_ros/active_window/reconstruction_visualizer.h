@@ -38,8 +38,8 @@
 #include <hydra_visualizer/color/mesh_color_adaptor.h>
 #include <hydra_visualizer/utils/marker_group_pub.h>
 #include <image_transport/image_transport.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 #include "hydra_ros/utils/lazy_publisher_group.h"
 
@@ -59,7 +59,7 @@ struct ImagePublisherGroup : public LazyPublisherGroup<ImagePublisherGroup> {
   bool shouldPublish(const image_transport::Publisher& pub) const;
   image_transport::Publisher makePublisher(const std::string& topic) const;
   void publishMsg(const image_transport::Publisher& pub,
-                  const sensor_msgs::Image::Ptr& img) const;
+                  const sensor_msgs::msg::Image::SharedPtr& img) const;
 
  private:
   mutable image_transport::ImageTransport transport_;
@@ -105,7 +105,7 @@ class ReconstructionVisualizer : public ReconstructionModule::Sink {
   MarkerGroupPub pubs_;
   ros::Publisher active_mesh_pub_;
   ImagePublisherGroup image_pubs_;
-  RosPublisherGroup<sensor_msgs::PointCloud2> cloud_pubs_;
+  RosPublisherGroup<sensor_msgs::msg::PointCloud2> cloud_pubs_;
   const visualizer::RangeColormap colormap_;
   const visualizer::CategoricalColormap label_colormap_;
   std::shared_ptr<MeshColoring> mesh_coloring_;

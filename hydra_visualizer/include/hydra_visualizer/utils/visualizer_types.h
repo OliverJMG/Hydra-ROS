@@ -35,11 +35,12 @@
 #pragma once
 #include <spark_dsg/color.h>
 #include <spark_dsg/dynamic_scene_graph.h>
-#include <std_msgs/ColorRGBA.h>
+#include <std_msgs/msg/color_rgba.hpp>
 
-#include "hydra_visualizer/DynamicLayerVisualizerConfig.h"
-#include "hydra_visualizer/LayerVisualizerConfig.h"
-#include "hydra_visualizer/VisualizerConfig.h"
+#include "hydra_visualizer/utils/configs.h"
+// #include "hydra_visualizer/DynamicLayerVisualizerConfig.h"
+// #include "hydra_visualizer/LayerVisualizerConfig.h"
+// #include "hydra_visualizer/VisualizerConfig.h"
 
 namespace hydra::visualizer {
 
@@ -73,7 +74,8 @@ struct DefaultEdgeColorFunction {
 
 template <typename ConfigT>
 struct LayerInfo {
-  hydra_visualizer::VisualizerConfig graph;
+  // hydra_visualizer::VisualizerConfig graph;
+  hydra::visualizer::VisualizerConfig graph;
   ConfigT layer;
   NodeColorFunction node_color = DefaultNodeColorFunction();
   NodeLabelFunction node_label = DefaultNodeLabelFunction();
@@ -84,15 +86,15 @@ struct LayerInfo {
   bool shouldVisualize(const spark_dsg::SceneGraphNode& node) const;
 };
 
-using StaticLayerInfo = LayerInfo<hydra_visualizer::LayerVisualizerConfig>;
-using DynamicLayerInfo = LayerInfo<hydra_visualizer::DynamicLayerVisualizerConfig>;
+using StaticLayerInfo = LayerInfo<hydra::visualizer::LayerVisualizerConfig>;
+using DynamicLayerInfo = LayerInfo<hydra::visualizer::DynamicLayerVisualizerConfig>;
 
 struct GraphInfo {
   struct EdgeInformation {
     bool visualize = false;
     size_t num_to_skip;
     double scale;
-    std_msgs::ColorRGBA color;
+    std_msgs::msg::ColorRGBA color;
     double source_offset;
     double target_offset;
   };

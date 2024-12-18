@@ -35,20 +35,20 @@
 #include "hydra_ros/active_window/reconstruction_visualizer.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <hydra/common/global_info.h>
 #include <hydra_visualizer/color/color_parsing.h>
 #include <hydra_visualizer/utils/visualizer_utilities.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include "hydra_ros/utils/input_data_to_messages.h"
 #include "hydra_ros/visualizer/voxel_drawing.h"
 
 namespace hydra {
 
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 using visualizer::ContinuousPalette;
 using visualizer::DivergentPalette;
 using visualizer::RangeColormap;

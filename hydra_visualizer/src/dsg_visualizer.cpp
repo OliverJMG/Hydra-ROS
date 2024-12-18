@@ -35,9 +35,14 @@
 
 #include "hydra_visualizer/dsg_visualizer.h"
 
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/config.h>
+#include <config_utilities/printing.h>
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
+
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 namespace hydra {
 
@@ -52,27 +57,36 @@ void declare_config(DsgVisualizer::Config& config) {
   checkCondition(!config.visualizer_frame.empty(), "visualizer_frame");
 }
 
-DsgVisualizer::DsgVisualizer(const Config& config)
-    : config(config::checkValid(config)),
-      nh_(config.ns),
-      renderer_(new SceneGraphRenderer(nh_)) {
-  for (auto&& [name, plugin] : config.plugins) {
-    plugins_.push_back(plugin.create(nh_, name));
-  }
+DsgVisualizer::DsgVisualizer()
+    : Node("dsg_visualizer", rclcpp::NodeOptions().allow_undeclared_parameters(true)
+                        .automatically_declare_parameters_from_overrides(true)) {}
 
+void DsgVisualizer::configure() {
+  config = config::fromRos<hydra::DsgVisualizer::Config>(this->shared_from_this());
+  // config::checkValid<hydra::DsgVisualizer::Config>(config);
+  RCLCPP_INFO_STREAM(get_logger(), config::toString(config));
+  renderer_ = std::make_shared<SceneGraphRenderer>(this->shared_from_this());
+  auto all_params = this->list_parameters({"plugins"}, rcl_interfaces::srv::ListParameters::Request::DEPTH_RECURSIVE);
+  
+  for (auto&& [name, plugin] : config.plugins) {
+    plugins_.push_back(plugin.create(this, name));
+  }
   graph_ = config.graph.create();
-  redraw_service_ = nh_.advertiseService("redraw", &DsgVisualizer::redraw, this);
-  reset_service_ = nh_.advertiseService("reset", &DsgVisualizer::reset, this);
+
+  redraw_service_ = this->create_service<std_srvs::srv::Empty>("redraw", 
+          std::bind(&DsgVisualizer::redraw, this, _1, _2));
+  reset_service_ = this->create_service<std_srvs::srv::Empty>("reset", 
+          std::bind(&DsgVisualizer::reset_cb, this, _1, _2));
 }
 
 void DsgVisualizer::start() {
-  loop_timer_ = nh_.createWallTimer(ros::WallDuration(config.loop_period_s),
-                                    [this](const ros::WallTimerEvent&) { spinOnce(); });
+  loop_timer_ = this->create_wall_timer(std::chrono::duration<double>(config.loop_period_s),
+                                    [this]() -> void { spinOnce(); });
 }
 
 void DsgVisualizer::reset() {
-  std_msgs::Header header;
-  header.stamp = ros::Time::now();
+  std_msgs::msg::Header header;
+  header.stamp = this->get_clock()->now();
   header.frame_id = config.visualizer_frame;
 
   renderer_->reset(header);
@@ -114,9 +128,9 @@ void DsgVisualizer::spinOnce(bool force) {
     return;
   }
 
-  std_msgs::Header header;
+  std_msgs::msg::Header header;
   header.frame_id = config.visualizer_frame;
-  header.stamp = stamped_graph.timestamp.value_or(ros::Time::now());
+  header.stamp = stamped_graph.timestamp.value_or(this->get_clock()->now());
 
   renderer_->draw(header, *stamped_graph.graph);
   for (const auto& plugin : plugins_) {
@@ -134,14 +148,14 @@ void DsgVisualizer::spinOnce(bool force) {
   }
 }
 
-bool DsgVisualizer::redraw(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
+void DsgVisualizer::redraw(std_srvs::srv::Empty::Request::SharedPtr, 
+        std_srvs::srv::Empty::Response::SharedPtr) {
   spinOnce(true);
-  return true;
 }
 
-bool DsgVisualizer::reset(std_srvs::Empty::Request&, std_srvs::Empty::Response&) {
+void DsgVisualizer::reset_cb(std_srvs::srv::Empty::Request::SharedPtr, 
+        std_srvs::srv::Empty::Response::SharedPtr) {
   reset();
-  return true;
 }
 
 }  // namespace hydra

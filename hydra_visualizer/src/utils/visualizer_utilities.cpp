@@ -38,7 +38,7 @@
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <spark_dsg/node_attributes.h>
 #include <spark_dsg/node_symbol.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <random>
 
@@ -59,18 +59,18 @@ bool operator<(const LayerKey& lhs, const LayerKey& rhs) {
 namespace hydra::visualizer {
 
 using namespace spark_dsg;
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 namespace {
 
-inline void fillPoseWithIdentity(geometry_msgs::Pose& pose) {
+inline void fillPoseWithIdentity(geometry_msgs::msg::Pose& pose) {
   Eigen::Vector3d identity_pos = Eigen::Vector3d::Zero();
   tf2::convert(identity_pos, pose.position);
   tf2::convert(Eigen::Quaterniond::Identity(), pose.orientation);
 }
 
-inline Marker makeNewEdgeList(const std_msgs::Header& header,
+inline Marker makeNewEdgeList(const std_msgs::msg::Header& header,
                               const std::string& ns_prefix,
                               LayerKey source,
                               LayerKey target) {
@@ -87,7 +87,7 @@ inline Marker makeNewEdgeList(const std_msgs::Header& header,
   return marker;
 }
 
-inline void convertVec3f(const Eigen::Vector3f& v, geometry_msgs::Point& p) {
+inline void convertVec3f(const Eigen::Vector3f& v, geometry_msgs::msg::Point& p) {
   p.x = v.x();
   p.y = v.y();
   p.z = v.z();
@@ -96,7 +96,7 @@ inline void convertVec3f(const Eigen::Vector3f& v, geometry_msgs::Point& p) {
 }  // namespace
 
 void drawBoundingBox(const spark_dsg::BoundingBox& bbox,
-                     const std_msgs::ColorRGBA& color,
+                     const std_msgs::msg::ColorRGBA& color,
                      Marker& marker) {
   // marker.header = header;
   // marker.type = Marker::LINE_LIST;
@@ -137,7 +137,7 @@ void drawBoundingBox(const spark_dsg::BoundingBox& bbox,
   }
 }
 
-MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
+MarkerArray makeLayerBoundingBoxes(const std_msgs::msg::Header& header,
                                    const StaticLayerInfo& info,
                                    const SceneGraphLayer& layer,
                                    const std::string& ns) {
@@ -151,7 +151,7 @@ MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
   auto& marker = markers.markers[0];
   marker.header = header;
   marker.type = Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.id = 0;
   marker.ns = ns;
   marker.scale.x = info.layer.bounding_box_scale;
@@ -166,7 +166,7 @@ MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
     edges = &markers.markers[1];
     edges->header = header;
     edges->type = Marker::LINE_LIST;
-    edges->action = visualization_msgs::Marker::ADD;
+    edges->action = visualization_msgs::msg::Marker::ADD;
     edges->id = 1;
     edges->ns = ns;
     edges->scale.x = info.layer.bounding_box_edge_scale;
@@ -187,11 +187,11 @@ MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
     drawBoundingBox(attrs.bounding_box, color, marker);
 
     if (edges) {
-      geometry_msgs::Point node_centroid;
+      geometry_msgs::msg::Point node_centroid;
       tf2::convert(attrs.position, node_centroid);
       node_centroid.z += info.getZOffset();
 
-      geometry_msgs::Point center_point;
+      geometry_msgs::msg::Point center_point;
       tf2::convert(attrs.position, center_point);
       center_point.z += info.layer.mesh_edge_break_ratio * info.getZOffset();
 
@@ -220,22 +220,22 @@ MarkerArray makeLayerBoundingBoxes(const std_msgs::Header& header,
   return markers;
 }
 
-Marker makeLayerEllipseBoundaries(const std_msgs::Header& header,
+Marker makeLayerEllipseBoundaries(const std_msgs::msg::Header& header,
                                   const StaticLayerInfo& info,
                                   const SceneGraphLayer& layer,
                                   const std::string& ns) {
   Marker marker;
   marker.header = header;
   marker.type = Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.id = 0;
   marker.ns = ns;
   marker.scale.x = info.layer.boundary_wireframe_scale;
   fillPoseWithIdentity(marker.pose);
   marker.pose.position.z += info.layer.collapse_boundary ? 0.0 : info.getZOffset();
 
-  geometry_msgs::Point last_point;
-  std_msgs::ColorRGBA color;
+  geometry_msgs::msg::Point last_point;
+  std_msgs::msg::ColorRGBA color;
 
   for (const auto& [node_id, node] : layer.nodes()) {
     const auto& attrs = node->attributes<Place2dNodeAttributes>();
@@ -268,14 +268,14 @@ Marker makeLayerEllipseBoundaries(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeLayerPolygonEdges(const std_msgs::Header& header,
+Marker makeLayerPolygonEdges(const std_msgs::msg::Header& header,
                              const StaticLayerInfo& info,
                              const SceneGraphLayer& layer,
                              const std::string& ns) {
   Marker marker;
   marker.header = header;
   marker.type = Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.id = 0;
   marker.ns = ns;
   marker.scale.x = info.layer.boundary_wireframe_scale;
@@ -288,13 +288,13 @@ Marker makeLayerPolygonEdges(const std_msgs::Header& header,
     }
 
     const auto pos = attrs.position;
-    geometry_msgs::Point node_point;
+    geometry_msgs::msg::Point node_point;
     tf2::convert(pos, node_point);
     node_point.z += info.getZOffset();
     const auto color = makeColorMsg(info.node_color(*node), info.layer.boundary_alpha);
 
     for (size_t i = 0; i < attrs.boundary.size(); ++i) {
-      geometry_msgs::Point boundary_point;
+      geometry_msgs::msg::Point boundary_point;
       tf2::convert(attrs.boundary[i], boundary_point);
       boundary_point.z = pos.z();
 
@@ -308,14 +308,14 @@ Marker makeLayerPolygonEdges(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeLayerPolygonBoundaries(const std_msgs::Header& header,
+Marker makeLayerPolygonBoundaries(const std_msgs::msg::Header& header,
                                   const StaticLayerInfo& info,
                                   const SceneGraphLayer& layer,
                                   const std::string& ns) {
   Marker marker;
   marker.header = header;
   marker.type = Marker::LINE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.id = 0;
   marker.ns = ns;
   marker.scale.x = info.layer.boundary_wireframe_scale;
@@ -331,14 +331,14 @@ Marker makeLayerPolygonBoundaries(const std_msgs::Header& header,
 
     const auto pos = attrs.position;
 
-    std_msgs::ColorRGBA color;
+    std_msgs::msg::ColorRGBA color;
     if (info.layer.boundary_use_node_color) {
       color = makeColorMsg(info.node_color(*node), info.layer.boundary_alpha);
     } else {
       color = makeColorMsg(Color(), info.layer.boundary_alpha);
     }
 
-    geometry_msgs::Point last_point;
+    geometry_msgs::msg::Point last_point;
     tf2::convert(attrs.boundary.back(), last_point);
     last_point.z = pos.z();
 
@@ -356,7 +356,7 @@ Marker makeLayerPolygonBoundaries(const std_msgs::Header& header,
   return marker;
 }
 
-MarkerArray makeEllipsoidMarkers(const std_msgs::Header& header,
+MarkerArray makeEllipsoidMarkers(const std_msgs::msg::Header& header,
                                  const StaticLayerInfo& info,
                                  const SceneGraphLayer& layer,
                                  const std::string& ns) {
@@ -371,7 +371,7 @@ MarkerArray makeEllipsoidMarkers(const std_msgs::Header& header,
     Marker marker;
     marker.header = header;
     marker.type = Marker::SPHERE;
-    marker.action = visualization_msgs::Marker::ADD;
+    marker.action = visualization_msgs::msg::Marker::ADD;
     marker.id = id++;
     marker.ns = ns;
 
@@ -390,7 +390,7 @@ MarkerArray makeEllipsoidMarkers(const std_msgs::Header& header,
   return msg;
 }
 
-MarkerArray makeLayerLabelMarkers(const std_msgs::Header& header,
+MarkerArray makeLayerLabelMarkers(const std_msgs::msg::Header& header,
                                   const StaticLayerInfo& info,
                                   const SceneGraphLayer& layer,
                                   const std::string& ns) {
@@ -411,7 +411,7 @@ MarkerArray makeLayerLabelMarkers(const std_msgs::Header& header,
     marker.id = node->id;
     marker.type = Marker::TEXT_VIEW_FACING;
     marker.action = Marker::ADD;
-    marker.lifetime = ros::Duration(0);
+    marker.lifetime = rclcpp::Duration(0, 0);
 
     const auto name = info.node_label(*node);
     if (name.empty()) {
@@ -441,14 +441,14 @@ MarkerArray makeLayerLabelMarkers(const std_msgs::Header& header,
   return msg;
 }
 
-Marker makeLayerNodeMarkers(const std_msgs::Header& header,
+Marker makeLayerNodeMarkers(const std_msgs::msg::Header& header,
                             const StaticLayerInfo& info,
                             const SceneGraphLayer& layer,
                             const std::string& ns) {
   Marker marker;
   marker.header = header;
   marker.type = info.layer.use_sphere_marker ? Marker::SPHERE_LIST : Marker::CUBE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.id = 0;
   marker.ns = ns;
 
@@ -465,7 +465,7 @@ Marker makeLayerNodeMarkers(const std_msgs::Header& header,
       continue;
     }
 
-    geometry_msgs::Point node_centroid;
+    geometry_msgs::msg::Point node_centroid;
     tf2::convert(node->attributes().position, node_centroid);
     node_centroid.z += info.getZOffset();
     marker.points.push_back(node_centroid);
@@ -477,7 +477,7 @@ Marker makeLayerNodeMarkers(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeLayerEdgeMarkers(const std_msgs::Header& header,
+Marker makeLayerEdgeMarkers(const std_msgs::msg::Header& header,
                             const StaticLayerInfo& info,
                             const SceneGraphLayer& layer,
                             const std::string& ns) {
@@ -498,12 +498,12 @@ Marker makeLayerEdgeMarkers(const std_msgs::Header& header,
       continue;
     }
 
-    geometry_msgs::Point source;
+    geometry_msgs::msg::Point source;
     tf2::convert(source_node.attributes().position, source);
     source.z += info.getZOffset();
     marker.points.push_back(source);
 
-    geometry_msgs::Point target;
+    geometry_msgs::msg::Point target;
     tf2::convert(target_node.attributes().position, target);
     target.z += info.getZOffset();
     marker.points.push_back(target);
@@ -517,7 +517,7 @@ Marker makeLayerEdgeMarkers(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeMeshEdgesMarker(const std_msgs::Header& header,
+Marker makeMeshEdgesMarker(const std_msgs::msg::Header& header,
                            const StaticLayerInfo& info,
                            const DynamicSceneGraph& graph,
                            const SceneGraphLayer& layer,
@@ -548,11 +548,11 @@ Marker makeMeshEdgesMarker(const std_msgs::Header& header,
     const auto color =
         info.layer.interlayer_edge_use_color ? info.node_color(*node) : Color();
 
-    geometry_msgs::Point center_point;
+    geometry_msgs::msg::Point center_point;
     tf2::convert(attrs.position, center_point);
     center_point.z += info.layer.mesh_edge_break_ratio * info.getZOffset();
 
-    geometry_msgs::Point centroid_location;
+    geometry_msgs::msg::Point centroid_location;
     tf2::convert(attrs.position, centroid_location);
     centroid_location.z += info.getZOffset();
 
@@ -574,7 +574,7 @@ Marker makeMeshEdgesMarker(const std_msgs::Header& header,
       }
 
       Eigen::Vector3d vertex_pos = mesh->pos(midx).cast<double>();
-      geometry_msgs::Point vertex;
+      geometry_msgs::msg::Point vertex;
       tf2::convert(vertex_pos, vertex);
 
       marker.points.push_back(center_point);
@@ -587,14 +587,14 @@ Marker makeMeshEdgesMarker(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeDynamicNodeMarkers(const std_msgs::Header& header,
+Marker makeDynamicNodeMarkers(const std_msgs::msg::Header& header,
                               const DynamicLayerInfo& info,
                               const DynamicSceneGraphLayer& layer,
                               const std::string& ns) {
   Marker marker;
   marker.header = header;
   marker.type = info.layer.node_use_sphere ? Marker::SPHERE_LIST : Marker::CUBE_LIST;
-  marker.action = visualization_msgs::Marker::ADD;
+  marker.action = visualization_msgs::msg::Marker::ADD;
   marker.ns = ns;
   marker.id = layer.prefix;
 
@@ -610,7 +610,7 @@ Marker makeDynamicNodeMarkers(const std_msgs::Header& header,
       continue;
     }
 
-    geometry_msgs::Point node_centroid;
+    geometry_msgs::msg::Point node_centroid;
     tf2::convert(node->attributes().position, node_centroid);
     node_centroid.z += info.getZOffset();
     marker.points.push_back(node_centroid);
@@ -621,7 +621,7 @@ Marker makeDynamicNodeMarkers(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeDynamicEdgeMarkers(const std_msgs::Header& header,
+Marker makeDynamicEdgeMarkers(const std_msgs::msg::Header& header,
                               const DynamicLayerInfo& info,
                               const DynamicSceneGraphLayer& layer,
                               const std::string& ns) {
@@ -644,12 +644,12 @@ Marker makeDynamicEdgeMarkers(const std_msgs::Header& header,
     marker.colors.push_back(makeColorMsg(c_source, info.layer.edge_alpha));
     marker.colors.push_back(makeColorMsg(c_target, info.layer.edge_alpha));
 
-    geometry_msgs::Point source;
+    geometry_msgs::msg::Point source;
     tf2::convert(layer.getNode(edge.source).attributes().position, source);
     source.z += info.getZOffset();
     marker.points.push_back(source);
 
-    geometry_msgs::Point target;
+    geometry_msgs::msg::Point target;
     tf2::convert(layer.getNode(edge.target).attributes().position, target);
     target.z += info.getZOffset();
     marker.points.push_back(target);
@@ -658,7 +658,7 @@ Marker makeDynamicEdgeMarkers(const std_msgs::Header& header,
   return marker;
 }
 
-Marker makeDynamicLabelMarker(const std_msgs::Header& header,
+Marker makeDynamicLabelMarker(const std_msgs::msg::Header& header,
                               const DynamicLayerInfo& info,
                               const DynamicSceneGraphLayer& layer,
                               const std::string& ns) {
@@ -668,7 +668,7 @@ Marker makeDynamicLabelMarker(const std_msgs::Header& header,
   marker.ns = ns;
   marker.id = layer.prefix;
   marker.action = Marker::ADD;
-  marker.lifetime = ros::Duration(0);
+  marker.lifetime = rclcpp::Duration(0, 0);
   marker.scale.z = info.layer.label_scale;
   marker.color = makeColorMsg(Color());
 
@@ -685,7 +685,7 @@ Marker makeDynamicLabelMarker(const std_msgs::Header& header,
   return marker;
 }
 
-MarkerArray makeGraphEdgeMarkers(const std_msgs::Header& header,
+MarkerArray makeGraphEdgeMarkers(const std_msgs::msg::Header& header,
                                  const GraphInfo& info,
                                  const DynamicSceneGraph& graph,
                                  const EdgeContainer::Edges& edges,
@@ -721,12 +721,12 @@ MarkerArray makeGraphEdgeMarkers(const std_msgs::Header& header,
     }
 
     auto& marker = msg.markers.at(iter->second);
-    geometry_msgs::Point source_point;
+    geometry_msgs::msg::Point source_point;
     tf2::convert(source.attributes().position, source_point);
     source_point.z += edge_info.source_offset;
     marker.points.push_back(source_point);
 
-    geometry_msgs::Point target_point;
+    geometry_msgs::msg::Point target_point;
     tf2::convert(target.attributes().position, target_point);
     target_point.z += edge_info.target_offset;
     marker.points.push_back(target_point);
@@ -738,11 +738,11 @@ MarkerArray makeGraphEdgeMarkers(const std_msgs::Header& header,
   return msg;
 }
 
-kimera_pgmo_msgs::KimeraPgmoMesh makeMeshMsg(const std_msgs::Header& header,
+kimera_pgmo_msgs::msg::KimeraPgmoMesh makeMeshMsg(const std_msgs::msg::Header& header,
                                              const spark_dsg::Mesh& mesh,
                                              const std::string& ns,
                                              MeshColoring::Ptr coloring) {
-  kimera_pgmo_msgs::KimeraPgmoMesh msg;
+  kimera_pgmo_msgs::msg::KimeraPgmoMesh msg;
   msg.header = header;
   msg.ns = ns;
 

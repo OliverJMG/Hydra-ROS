@@ -33,8 +33,8 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <pose_graph_tools_msgs/BowQueries.h>
-#include <ros/ros.h>
+#include <nav_interfaces/msg/bow_queries.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace hydra {
 

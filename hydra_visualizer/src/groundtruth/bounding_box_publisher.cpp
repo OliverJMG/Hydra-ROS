@@ -41,7 +41,7 @@
 #include <config_utilities/types/path.h>
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <algorithm>
 
@@ -131,8 +131,8 @@ struct convert<spark_dsg::BoundingBox> {
 namespace hydra {
 
 using spark_dsg::BoundingBox;
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 namespace {
 
@@ -179,18 +179,19 @@ void declare_config(BoundingBoxPublisher::Config& config) {
   field(config.alpha, "alpha");
 }
 
-BoundingBoxPublisher::BoundingBoxPublisher(const Config& config)
-    : config(config::checkValid(config)), nh_(config.ns), colormap_(config.colormap) {
-  pub_ = nh_.advertise<MarkerArray>("gt_markers", 1, true);
-  marker_ns_ = config.marker_ns.empty() ? nh_.getNamespace() : config.marker_ns;
+BoundingBoxPublisher::BoundingBoxPublisher(const Config& config) : Node("bounding_box_publisher"),
+    config(config::checkValid(config)), colormap_(config.colormap) {
+  pub_ = this->create_publisher<MarkerArray>("gt_markers", 1);
+  marker_ns_ = config.marker_ns.empty() ? this->get_effective_namespace() : config.marker_ns;
 
-  std_msgs::String msg;
+  std_msgs::msg::String msg;
   msg.data = config.filepath.string();
   load(msg);
-  sub_ = nh_.subscribe("load", 1, &BoundingBoxPublisher::load, this);
+  sub_ = this->create_subscription<std_msgs::msg::String>("load", 1, 
+          std::bind(&BoundingBoxPublisher::load, this, std::placeholders::_1));
 }
 
-void BoundingBoxPublisher::drawBoxes(const std_msgs::Header& header,
+void BoundingBoxPublisher::drawBoxes(const std_msgs::msg::Header& header,
                                      const Annotations& annotations,
                                      MarkerArray& msg) const {
   Marker marker;
@@ -214,7 +215,7 @@ void BoundingBoxPublisher::drawBoxes(const std_msgs::Header& header,
   tracker_.add(marker, msg);
 }
 
-void BoundingBoxPublisher::drawLabels(const std_msgs::Header& header,
+void BoundingBoxPublisher::drawLabels(const std_msgs::msg::Header& header,
                                       const Annotations& annotations,
                                       MarkerArray& msg) const {
   // TODO(nathan) line to bbox center
@@ -251,7 +252,7 @@ void BoundingBoxPublisher::drawLabels(const std_msgs::Header& header,
   }
 }
 
-void BoundingBoxPublisher::load(const std_msgs::String& msg) {
+void BoundingBoxPublisher::load(const std_msgs::msg::String& msg) {
   const std::filesystem::path filepath(msg.data);
   if (!std::filesystem::exists(filepath)) {
     LOG(WARNING) << "Filepath '" << filepath.string() << "' does not exist!";
@@ -262,8 +263,8 @@ void BoundingBoxPublisher::load(const std_msgs::String& msg) {
   const auto boxes = node.as<Annotations>();
   VLOG(3) << "Loaded bounding boxes from '" << msg.data << "':\n" << printBoxes(boxes);
 
-  std_msgs::Header header;
-  header.stamp = ros::Time::now();
+  std_msgs::msg::Header header;
+  header.stamp = this->get_clock()->now();
   header.frame_id = config.frame_id;
 
   MarkerArray markers;
@@ -273,7 +274,7 @@ void BoundingBoxPublisher::load(const std_msgs::String& msg) {
   }
 
   tracker_.clearPrevious(header, markers);
-  pub_.publish(markers);
+  pub_->publish(markers);
 }
 
 }  // namespace hydra

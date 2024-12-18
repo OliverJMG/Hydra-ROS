@@ -33,8 +33,8 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include <spark_dsg/color.h>
 
 namespace hydra {

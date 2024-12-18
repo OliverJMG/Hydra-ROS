@@ -33,9 +33,9 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "hydra_visualizer/utils/marker_tracker.h"
 
@@ -43,26 +43,26 @@ namespace hydra {
 
 class MarkerGroupPub {
  public:
-  using MarkerCallback = std::function<visualization_msgs::Marker()>;
-  using ArrayCallback = std::function<visualization_msgs::MarkerArray()>;
+  using MarkerCallback = std::function<visualization_msgs::msg::Marker()>;
+  using ArrayCallback = std::function<visualization_msgs::msg::MarkerArray()>;
 
   struct TrackedPublisher {
     MarkerTracker tracker;
-    ros::Publisher pub;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub;
   };
 
-  explicit MarkerGroupPub(const ros::NodeHandle& nh);
+  explicit MarkerGroupPub(const rclcpp::Node::SharedPtr nh);
 
   void publish(const std::string& name,
-               const std_msgs::Header& header,
+               const std_msgs::msg::Header& header,
                const MarkerCallback& marker) const;
 
   void publish(const std::string& name,
-               const std_msgs::Header& header,
+               const std_msgs::msg::Header& header,
                const ArrayCallback& marker) const;
 
  private:
-  mutable ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node_;
   mutable std::map<std::string, TrackedPublisher> pubs_;
 };
 

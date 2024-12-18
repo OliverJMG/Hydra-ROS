@@ -36,9 +36,9 @@
 
 #include <hydra/utils/timing_utilities.h>
 #include <kimera_pgmo/utils/common_functions.h>
-#include <pose_graph_tools_msgs/LcdFrameRegistration.h>
-#include <ros/service.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <nav_interfaces/msg/lcd_frame_registration.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include <iomanip>
 

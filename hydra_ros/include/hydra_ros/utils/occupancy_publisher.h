@@ -34,8 +34,8 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/common/global_info.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <ros/ros.h>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <spark_dsg/bounding_box.h>
 #include <spatial_hash/voxel_layer.h>
 

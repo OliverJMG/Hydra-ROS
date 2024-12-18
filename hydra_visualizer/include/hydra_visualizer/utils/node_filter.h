@@ -1,7 +1,7 @@
 #pragma once
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <spark_dsg/scene_graph_node.h>
-#include <std_msgs/String.h>
+#include <std_msgs/msg/string.hpp>
 
 namespace hydra {
 
@@ -15,7 +15,7 @@ class NodeFilter {
     spark_dsg::LayerId child_layer = spark_dsg::DsgLayers::OBJECTS;
   } const config;
 
-  NodeFilter(const Config& config, const ros::NodeHandle& nh);
+  NodeFilter(const Config& config, const rclcpp::Node::SharedPtr node);
 
   virtual ~NodeFilter() = default;
 
@@ -26,10 +26,10 @@ class NodeFilter {
   Func getFilter() const;
 
  private:
-  void handleFilter(const std_msgs::String& msg);
+  void handleFilter(const std_msgs::msg::String::ConstSharedPtr& msg);
 
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
 
   bool has_change_;
   std::set<spark_dsg::NodeId> filter_;

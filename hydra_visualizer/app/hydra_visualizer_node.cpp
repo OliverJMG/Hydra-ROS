@@ -35,8 +35,8 @@
 #include <config_utilities/config_utilities.h>
 #include <config_utilities/external_registry.h>
 #include <config_utilities/logging/log_to_stdout.h>
-#include <config_utilities/parsing/ros.h>
 #include <config_utilities/settings.h>
+#include <config_utilities/parsing/ros2.h>
 #include <glog/logging.h>
 
 #include <filesystem>
@@ -63,20 +63,37 @@ void declare_config(ExternalPluginConfig& config) {
 }  // namespace hydra::visualizer
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "hydra_visualizer_node");
+
+  // Strip ROS specific arguments that gflags can't parse
+  std::vector<std::string> non_ros_args = rclcpp::remove_ros_arguments(argc, argv);
+
+  // Create argc and argv equivalents
+  int non_ros_argc = non_ros_args.size();
+  char ** non_ros_argv = new char*[non_ros_argc];
+  for (size_t i = 0; i < non_ros_args.size(); ++i) {
+    non_ros_argv[i] = new char[non_ros_args.at(i).size() + 1]; // +1 for null-terminator
+    strcpy(non_ros_argv[i], non_ros_args.at(i).c_str());
+  }
+
+  google::InitGoogleLogging(non_ros_argv[0]);
+  google::ParseCommandLineFlags(&non_ros_argc, &non_ros_argv, false);
+  google::InstallFailureSignalHandler();
+
+  for (size_t i = 0; i < non_ros_args.size(); ++i) {
+    delete [] non_ros_argv[i];
+  }
+  delete [] non_ros_argv;
+
+  rclcpp::init(argc, argv);
 
   FLAGS_minloglevel = 0;
   FLAGS_logtostderr = 1;
   FLAGS_colorlogtostderr = 1;
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
-  google::InstallFailureSignalHandler();
-
-  ros::NodeHandle nh("~");
   const auto plugin_config =
-      config::fromRos<hydra::visualizer::ExternalPluginConfig>(nh, "external_plugins");
-  ROS_INFO_STREAM("Plugins:\n" << config::toString(plugin_config));
+      config::fromYamlFile<hydra::visualizer::ExternalPluginConfig>(
+              "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/external_plugins.yaml", "external_plugins");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("hydra_visualizer_node"), "Plugins:\n" << config::toString(plugin_config));
 
   auto& settings = config::Settings();
   settings.allow_external_libraries = plugin_config.allow_plugins;
@@ -85,12 +102,12 @@ int main(int argc, char** argv) {
   const auto plugins = config::loadExternalFactories(plugin_config.paths);
 
   {  // start visualizer scope
-    const auto config = config::fromRos<hydra::DsgVisualizer::Config>(nh);
-    ROS_INFO_STREAM("Config:\n" << config::toString(config));
-    auto node = std::make_unique<hydra::DsgVisualizer>(config);
+    // const auto config = config::fromRos<hydra::DsgVisualizer::Config>(nh);
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("hydra_visualizer_node"), "Config:\n" << config::toString(config));
+    auto node = std::make_shared<hydra::DsgVisualizer>();
+    node->configure();
     node->start();
-
-    ros::spin();
+    rclcpp::spin(node);
   }  // end visualizer scope
 
   return 0;

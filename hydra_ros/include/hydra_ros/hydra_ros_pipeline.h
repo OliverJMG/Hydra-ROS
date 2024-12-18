@@ -38,7 +38,7 @@
 #include <hydra/backend/backend_module.h>
 #include <hydra/common/hydra_pipeline.h>
 #include <hydra/frontend/graph_builder.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "hydra_ros/input/feature_receiver.h"
 #include "hydra_ros/input/ros_input_module.h"

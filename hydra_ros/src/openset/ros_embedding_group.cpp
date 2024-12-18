@@ -3,13 +3,13 @@
 #include <config_utilities/config.h>
 #include <glog/logging.h>
 #include <hydra/openset/openset_types.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
-#include <semantic_inference_msgs/EncodeFeature.h>
-#include <semantic_inference_msgs/FeatureVectors.h>
+#include <semantic_inference_msgs/msg/encode_feature.hpp>
+#include <semantic_inference_msgs/msg/feature_vectors.hpp>
 #endif
 
 namespace hydra {

@@ -41,10 +41,10 @@
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
 #include <hydra/common/global_info.h>
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
-#include <sensor_msgs/CameraInfo.h>
+#include <rclcpp/rclcpp.hpp>
+// #include <rosbag/bag.h>
+// #include <rosbag/view.h>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 #include "hydra_ros/utils/pose_cache.h"
 #include "hydra_ros/utils/tf_lookup.h"

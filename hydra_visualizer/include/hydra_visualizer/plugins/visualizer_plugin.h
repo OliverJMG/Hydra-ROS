@@ -33,7 +33,8 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/header.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
 
 namespace hydra {
@@ -42,15 +43,15 @@ class VisualizerPlugin {
  public:
   using Ptr = std::shared_ptr<VisualizerPlugin>;
 
-  VisualizerPlugin(const ros::NodeHandle& nh, const std::string& name)
-      : nh_(nh, name) {}
+  VisualizerPlugin(const rclcpp::Node::SharedPtr node,
+          const std::string& name) : node_(node) {}
 
   virtual ~VisualizerPlugin() = default;
 
-  virtual void draw(const std_msgs::Header& header,
+  virtual void draw(const std_msgs::msg::Header& header,
                     const spark_dsg::DynamicSceneGraph& graph) = 0;
 
-  virtual void reset(const std_msgs::Header& header) = 0;
+  virtual void reset(const std_msgs::msg::Header& header) = 0;
 
   // Let plugins request changes.
   virtual bool hasChange() const { return has_change_; }
@@ -58,7 +59,7 @@ class VisualizerPlugin {
   virtual void clearChangeFlag() { has_change_ = false; }
 
  protected:
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node_;
   bool has_change_ = false;
 };
 

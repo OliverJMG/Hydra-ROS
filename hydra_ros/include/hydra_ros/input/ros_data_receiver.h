@@ -34,7 +34,7 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/input/data_receiver.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 namespace hydra {
 

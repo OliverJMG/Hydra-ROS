@@ -33,9 +33,9 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include <string>
 #include <vector>
@@ -45,19 +45,19 @@
 
 namespace hydra {
 
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 class SceneGraphRenderer {
  public:
   using Ptr = std::shared_ptr<SceneGraphRenderer>;
-  explicit SceneGraphRenderer(const ros::NodeHandle& nh);
+  explicit SceneGraphRenderer(rclcpp::Node::SharedPtr nh);
 
   virtual ~SceneGraphRenderer() = default;
 
-  virtual void reset(const std_msgs::Header& header);
+  virtual void reset(const std_msgs::msg::Header& header);
 
-  virtual void draw(const std_msgs::Header& header,
+  virtual void draw(const std_msgs::msg::Header& header,
                     const spark_dsg::DynamicSceneGraph& graph);
 
   virtual bool hasChange() const;
@@ -65,19 +65,19 @@ class SceneGraphRenderer {
   virtual void clearChangeFlag();
 
  protected:
-  virtual void drawLayer(const std_msgs::Header& header,
+  virtual void drawLayer(const std_msgs::msg::Header& header,
                          const visualizer::StaticLayerInfo& info,
                          const spark_dsg::SceneGraphLayer& layer,
                          MarkerArray& msg);
 
-  virtual void drawDynamicLayer(const std_msgs::Header& header,
+  virtual void drawDynamicLayer(const std_msgs::msg::Header& header,
                                 const visualizer::DynamicLayerInfo& info,
                                 const spark_dsg::DynamicSceneGraphLayer& layer,
                                 MarkerArray& msg);
 
  protected:
-  ros::NodeHandle nh_;
-  ros::Publisher pub_;
+  rclcpp::Node::SharedPtr nh_;
+  rclcpp::Publisher<MarkerArray>::SharedPtr pub_;
   MarkerTracker tracker_;
 };
 

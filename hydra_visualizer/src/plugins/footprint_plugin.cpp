@@ -38,7 +38,7 @@
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
 #include <spark_dsg/node_attributes.h>
-#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_eigen/tf2_eigen.hpp>
 
 #include "hydra_visualizer/color/colormap_utilities.h"
 #include "hydra_visualizer/utils/polygon_utilities.h"
@@ -50,8 +50,8 @@ using spark_dsg::DynamicSceneGraph;
 using spark_dsg::LayerId;
 using spark_dsg::PlaceNodeAttributes;
 using spark_dsg::SemanticNodeAttributes;
-using visualization_msgs::Marker;
-using visualization_msgs::MarkerArray;
+using visualization_msgs::msg::Marker;
+using visualization_msgs::msg::MarkerArray;
 
 struct LayerIdConversion {
   static std::string toIntermediate(const LayerId& layer_id, std::string&) {
@@ -83,16 +83,16 @@ void declare_config(FootprintPlugin::Config& config) {
 }
 
 FootprintPlugin::FootprintPlugin(const Config& config,
-                                 const ros::NodeHandle& nh,
+                                 const rclcpp::Node::SharedPtr node,
                                  const std::string& name)
-    : VisualizerPlugin(nh, name), config(config::checkValid(config)) {
+    : VisualizerPlugin(node, name), config(config::checkValid(config)) {
   // namespacing gives us a reasonable topic
-  pub_ = nh_.advertise<MarkerArray>("", 1, true);
+  pub_ = node_->create_publisher<MarkerArray>("", 1);
 }
 
 FootprintPlugin::~FootprintPlugin() {}
 
-void FootprintPlugin::draw(const std_msgs::Header& header,
+void FootprintPlugin::draw(const std_msgs::msg::Header& header,
                            const DynamicSceneGraph& graph) {
   MarkerArray markers;
   markers.markers.resize(
@@ -166,15 +166,15 @@ void FootprintPlugin::draw(const std_msgs::Header& header,
   tracker_.add(markers, msg);
   tracker_.clearPrevious(header, msg);
   if (!msg.markers.empty()) {
-    pub_.publish(msg);
+    pub_->publish(msg);
   }
 }
 
-void FootprintPlugin::reset(const std_msgs::Header& header) {
+void FootprintPlugin::reset(const std_msgs::msg::Header& header) {
   MarkerArray msg;
   tracker_.clearPrevious(header, msg);
   if (!msg.markers.empty()) {
-    pub_.publish(msg);
+    pub_->publish(msg);
   }
 }
 

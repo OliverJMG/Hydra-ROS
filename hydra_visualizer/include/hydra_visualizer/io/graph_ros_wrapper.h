@@ -34,14 +34,14 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <config_utilities/factory.h>
-#include <ros/ros.h>
-#include <hydra_msgs/DsgUpdate.h>
+#include <rclcpp/rclcpp.hpp>
+#include <hydra_msgs/msg/dsg_update.hpp>
 
 #include "hydra_visualizer/io/graph_wrapper.h"
 
 namespace hydra {
 
-class GraphRosWrapper : public GraphWrapper {
+class GraphRosWrapper : public GraphWrapper, rclcpp::Node {
  public:
   struct Config {
     std::string wrapper_ns = "~";
@@ -56,12 +56,11 @@ class GraphRosWrapper : public GraphWrapper {
   StampedGraph get() const override;
 
  private:
-  void graphCallback(const hydra_msgs::DsgUpdate& msg);
+  void graphCallback(const hydra_msgs::msg::DsgUpdate::SharedPtr msg);
 
   bool has_change_;
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
-  ros::Time last_time_;
+  rclcpp::Subscription<hydra_msgs::msg::DsgUpdate>::SharedPtr sub_;
+  rclcpp::Time last_time_;
   spark_dsg::DynamicSceneGraph::Ptr graph_;
 
   inline static const auto registration_ =

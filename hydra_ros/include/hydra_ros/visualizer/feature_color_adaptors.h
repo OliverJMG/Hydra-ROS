@@ -2,7 +2,7 @@
 #include <hydra/openset/embedding_distances.h>
 #include <hydra_visualizer/color/graph_color_adaptors.h>
 #include <hydra_visualizer/utils/label_adaptors.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "hydra_ros/openset/ros_embedding_group.h"
 

@@ -34,7 +34,7 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <config_utilities/factory.h>
-#include <std_srvs/SetBool.h>
+#include <std_srvs/srv/set_bool.hpp>
 
 #include "hydra_visualizer/plugins/visualizer_plugin.h"
 #include "hydra_visualizer/utils/marker_tracker.h"
@@ -56,25 +56,25 @@ class FootprintPlugin : public VisualizerPlugin {
   } const config;
 
   FootprintPlugin(const Config& config,
-                  const ros::NodeHandle& nh,
+                  const rclcpp::Node::SharedPtr node,
                   const std::string& name);
 
   virtual ~FootprintPlugin();
 
-  void draw(const std_msgs::Header& header,
+  void draw(const std_msgs::msg::Header& header,
             const spark_dsg::DynamicSceneGraph& graph) override;
 
-  void reset(const std_msgs::Header& header) override;
+  void reset(const std_msgs::msg::Header& header) override;
 
  protected:
-  ros::Publisher pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_;
   MarkerTracker tracker_;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<VisualizerPlugin,
                                      FootprintPlugin,
                                      FootprintPlugin::Config,
-                                     ros::NodeHandle,
+                                     rclcpp::Node::SharedPtr,
                                      std::string>("FootprintPlugin");
 };
 

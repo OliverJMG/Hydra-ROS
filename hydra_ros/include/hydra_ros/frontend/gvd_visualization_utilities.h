@@ -37,8 +37,8 @@
 #include <hydra/places/gvd_graph.h>
 #include <hydra/places/gvd_voxel.h>
 #include <hydra_visualizer/color/colormap_utilities.h>
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 #include "hydra_ros/GvdVisualizerConfig.h"
 

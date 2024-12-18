@@ -33,8 +33,12 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
-#include <dynamic_reconfigure/server.h>
-#include <ros/ros.h>
+
+#include <string>
+
+#include <rclcpp/rclcpp.hpp>
+#include <config_utilities/parsing/yaml.h>
+#include "hydra_visualizer/utils/configs.h"
 
 namespace hydra::visualizer {
 
@@ -43,13 +47,11 @@ template <typename Config>
 class ConfigWrapper {
  public:
   using Ptr = std::shared_ptr<ConfigWrapper<Config>>;
-  using Server = dynamic_reconfigure::Server<Config>;
   using UpdateCallback = std::function<void(const Config&)>;
 
-  ConfigWrapper(const ros::NodeHandle& nh, const std::string& ns)
-      : nh_(nh, ns), changed_(true) {
-    server_ = std::make_unique<Server>(nh_);
-    server_->setCallback(boost::bind(&ConfigWrapper<Config>::update, this, _1, _2));
+  ConfigWrapper(const std::string& path, const std::string& ns = "")
+      : changed_(true) {
+    config_ = config::fromYamlFile<Config>(path, ns);
   }
 
   bool hasChange() const { return changed_; }
@@ -72,12 +74,10 @@ class ConfigWrapper {
   }
 
  private:
-  ros::NodeHandle nh_;
 
   bool changed_;
   Config config_;
 
-  std::unique_ptr<Server> server_;
   UpdateCallback on_update_callback_;
 };
 

@@ -34,7 +34,8 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <config_utilities/virtual_config.h>
-#include <std_srvs/SetBool.h>
+#include <std_srvs/srv/set_bool.hpp>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh.hpp>
 
 #include "hydra_visualizer/color/mesh_color_adaptor.h"
 #include "hydra_visualizer/plugins/visualizer_plugin.h"
@@ -51,30 +52,31 @@ class MeshPlugin : public VisualizerPlugin {
     config::VirtualConfig<MeshColoring> coloring{SemanticMeshColoring::Config()};
   } const config;
 
-  MeshPlugin(const Config& config, const ros::NodeHandle& nh, const std::string& name);
+  MeshPlugin(const Config& config, const rclcpp::Node::SharedPtr node, const std::string& name);
 
   virtual ~MeshPlugin();
 
-  void draw(const std_msgs::Header& header,
+  void draw(const std_msgs::msg::Header& header,
             const spark_dsg::DynamicSceneGraph& graph) override;
 
-  void reset(const std_msgs::Header& header) override;
+  void reset(const std_msgs::msg::Header& header) override;
 
  protected:
-  bool handleService(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
+  bool handleService(const std_srvs::srv::SetBool::Request::SharedPtr req, 
+          std_srvs::srv::SetBool::Response::SharedPtr res);
 
   std::string getMsgNamespace() const;
 
   bool use_color_adaptor_;
-  ros::Publisher mesh_pub_;
-  ros::ServiceServer toggle_service_;
+  rclcpp::Publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>::SharedPtr mesh_pub_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr toggle_service_;
   std::shared_ptr<MeshColoring> mesh_coloring_;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<VisualizerPlugin,
                                      MeshPlugin,
                                      MeshPlugin::Config,
-                                     ros::NodeHandle,
+                                     rclcpp::Node::SharedPtr,
                                      std::string>("MeshPlugin");
 };
 

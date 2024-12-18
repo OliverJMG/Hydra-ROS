@@ -35,7 +35,7 @@
 #pragma once
 #include <config_utilities/factory.h>
 #include <hydra/common/module.h>
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include "hydra_ros/utils/tf_lookup.h"
 

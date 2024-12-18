@@ -35,7 +35,7 @@
 #include "hydra_ros/hydra_ros_pipeline.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <config_utilities/validation.h>
 #include <hydra/active_window/reconstruction_module.h>

@@ -37,13 +37,13 @@
 #include <config_utilities/config.h>
 #include <config_utilities/types/path.h>
 #include <config_utilities/validation.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/msg/pose.hpp>
 #include <glog/logging.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
+// #include <rosbag/bag.h>
+// #include <rosbag/view.h>
 #include <tf2/exceptions.h>
-#include <tf2_eigen/tf2_eigen.h>
-#include <tf2_msgs/TFMessage.h>
+#include <tf2_eigen/tf2_eigen.hpp>
+#include <tf2_msgs/msg/tf_message.hpp>
 
 namespace hydra {
 

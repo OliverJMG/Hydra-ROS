@@ -1,0 +1,46 @@
+z_offset_scale: 0.0
+visualize: false
+
+# nodes:
+marker_scale: 0.1
+marker_color_mode: NodeColorAdaptor
+marker_alpha: 1.0
+use_sphere_marker: false
+
+# labels:
+use_label: false
+collapse_label: false
+label_mode: IdLabelAdaptor
+label_height: 1.0
+label_scale: 0.5
+add_label_jitter: false
+label_jitter_scale: 0.2
+
+# bounding_box:
+use_bounding_box: false
+collapse_bounding_box: false
+bounding_box_scale: 0.1
+bounding_box_edge_scale: 0.01
+bounding_box_alpha: 0.5
+mesh_edge_break_ratio: 0.5
+
+# polygons:
+draw_boundaries: false
+collapse_boundary: false
+boundary_wireframe_scale: 0.1
+boundary_use_node_color: true
+boundary_alpha: 0.5
+draw_boundary_ellipse: false
+boundary_ellipse_alpha: 0.5
+draw_frontier_ellipse: false
+draw_mesh_edges: false
+
+# edges:
+edge_scale: 0.03
+edge_alpha: 1.0
+edge_use_color: true
+interlayer_edge_use_source: true
+interlayer_edge_scale: 0.03
+interlayer_edge_alpha: 1.0
+interlayer_edge_use_color: true
+interlayer_edge_insertion_skip: 0

@@ -34,7 +34,7 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_ros/utils/input_data_to_messages.h"
 
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <hydra/input/input_data.h>
 
 namespace hydra {

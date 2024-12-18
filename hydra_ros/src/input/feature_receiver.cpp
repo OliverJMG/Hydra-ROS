@@ -45,7 +45,7 @@
 #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
-#include <semantic_inference_msgs/FeatureVectorStamped.h>
+#include <semantic_inference_msgs/msg/feature_vector_stamped.hpp>
 #endif
 
 namespace hydra {

@@ -35,8 +35,8 @@
 #pragma once
 #include <hydra/frontend/mesh_segmenter.h>
 #include <kimera_pgmo/mesh_delta.h>
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include "hydra_ros/utils/lazy_publisher_group.h"
 
@@ -65,11 +65,11 @@ class ObjectVisualizer : public MeshSegmenter::Sink {
  protected:
   void fillMarkerFromCloud(const kimera_pgmo::MeshDelta& delta,
                            const std::vector<size_t>& indices,
-                           visualization_msgs::Marker& marker) const;
+                           visualization_msgs::msg::Marker& marker) const;
 
  protected:
   ros::NodeHandle nh_;
-  RosPublisherGroup<visualization_msgs::Marker> pubs_;
+  RosPublisherGroup<visualization_msgs::msg::Marker> pubs_;
 
  private:
   inline static const auto registration_ =

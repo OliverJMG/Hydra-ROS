@@ -43,9 +43,10 @@ namespace hydra {
 
 using spark_dsg::DynamicSceneGraph;
 
-GraphRosWrapper::GraphRosWrapper(const Config& config)
-    : config(config::checkValid(config)), has_change_(false), nh_(config.wrapper_ns) {
-  sub_ = nh_.subscribe("dsg", 1, &GraphRosWrapper::graphCallback, this);
+GraphRosWrapper::GraphRosWrapper(const Config& config) : Node("graph_wrapper"),
+    config(config::checkValid(config)), has_change_(false) {
+  sub_ = this->create_subscription<hydra_msgs::msg::DsgUpdate>("dsg", 1, 
+          std::bind(&GraphRosWrapper::graphCallback, this, std::placeholders::_1));
 }
 
 bool GraphRosWrapper::hasChange() const { return has_change_; }
@@ -54,19 +55,19 @@ void GraphRosWrapper::clearChangeFlag() { has_change_ = false; }
 
 StampedGraph GraphRosWrapper::get() const { return {graph_, last_time_}; }
 
-void GraphRosWrapper::graphCallback(const hydra_msgs::DsgUpdate& msg) {
+void GraphRosWrapper::graphCallback(const hydra_msgs::msg::DsgUpdate::SharedPtr msg) {
   // not designed to be threadsafe; should lock and clone graph on return if desired
   try {
-    last_time_ = msg.header.stamp;
+    last_time_ = msg->header.stamp;
     if (!graph_) {
-      graph_ = spark_dsg::io::binary::readGraph(msg.layer_contents);
+      graph_ = spark_dsg::io::binary::readGraph(msg->layer_contents);
     } else {
-      spark_dsg::io::binary::updateGraph(*graph_, msg.layer_contents);
+      spark_dsg::io::binary::updateGraph(*graph_, msg->layer_contents);
     }
 
     has_change_ = true;
   } catch (const std::exception& e) {
-    ROS_ERROR_STREAM("Received invalid message: " << e.what());
+    RCLCPP_ERROR_STREAM(get_logger(), "Received invalid message: " << e.what());
     return;
   }
 }

@@ -34,9 +34,9 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <config_utilities/factory.h>
-#include <ros/ros.h>
-#include <std_msgs/String.h>
-#include <std_srvs/Empty.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 #include <filesystem>
 
@@ -48,7 +48,7 @@ class GraphFileWrapper : public GraphWrapper {
  public:
   struct Config {
     std::filesystem::path filepath;
-    std::string wrapper_ns = "~/graph";
+    std::string wrapper_ns = "graph";
   } const config;
 
   explicit GraphFileWrapper(const Config& config);
@@ -59,17 +59,18 @@ class GraphFileWrapper : public GraphWrapper {
 
   StampedGraph get() const override;
 
-  bool reload(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  // bool reload(std_srvs::srv::Empty::Request::SharedPtr req, 
+  //         std_srvs::srv::Empty::Response::SharedPtr res);
 
-  void load(const std_msgs::String& msg);
+  // void load(const std_msgs::msg::String::SharedPtr msg);
 
  private:
-  ros::NodeHandle nh_;
+  // rclcpp::Node::SharedPtr node_;
   bool has_change_;
   std::filesystem::path filepath_;
   spark_dsg::DynamicSceneGraph::Ptr graph_;
-  ros::ServiceServer service_;
-  ros::Subscriber sub_;
+  // rclcpp::Service<std_srvs::srv::Empty>::SharedPtr service_;
+  // rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<GraphWrapper,

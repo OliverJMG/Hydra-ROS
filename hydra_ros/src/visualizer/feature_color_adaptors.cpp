@@ -1,6 +1,6 @@
 #include "hydra_ros/visualizer/feature_color_adaptors.h"
 
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <config_utilities/validation.h>
 #include <glog/logging.h>
@@ -14,7 +14,7 @@
 #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
-#include <semantic_inference_msgs/FeatureVectorStamped.h>
+#include <semantic_inference_msgs/msg/feature_vector_stamped.hpp>
 #endif
 
 namespace hydra {

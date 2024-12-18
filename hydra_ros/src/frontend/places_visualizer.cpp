@@ -35,7 +35,7 @@
 #include "hydra_ros/frontend/places_visualizer.h"
 
 #include <config_utilities/config.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <hydra/common/global_info.h>
 #include <hydra/frontend/gvd_place_extractor.h>

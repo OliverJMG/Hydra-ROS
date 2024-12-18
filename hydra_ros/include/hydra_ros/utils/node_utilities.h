@@ -35,8 +35,8 @@
 #pragma once
 #include <hydra/common/dsg_types.h>
 #include <hydra/utils/log_utilities.h>
-#include <ros/ros.h>
-#include <std_srvs/Empty.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/empty.hpp>
 
 namespace hydra {
 

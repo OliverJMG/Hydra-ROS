@@ -15,9 +15,10 @@ void declare_config(NodeFilter::Config& config) {
   field(config.child_layer, "child_layer");
 }
 
-NodeFilter::NodeFilter(const Config& config, const ros::NodeHandle& nh)
-    : config(config), nh_(nh), has_change_(false) {
-  sub_ = nh_.subscribe("node_filter", 1, &NodeFilter::handleFilter, this);
+NodeFilter::NodeFilter(const Config& config, const rclcpp::Node::SharedPtr node)
+    : config(config), node_(node), has_change_(false) {
+  sub_ = node_->create_subscription<std_msgs::msg::String>("node_filter", 1, 
+      std::bind(&NodeFilter::handleFilter, this, std::placeholders::_1));
 }
 
 NodeFilter::Func NodeFilter::getFilter() const {
@@ -39,11 +40,11 @@ NodeFilter::Func NodeFilter::getFilter() const {
   };
 }
 
-void NodeFilter::handleFilter(const std_msgs::String& msg) {
+void NodeFilter::handleFilter(const std_msgs::msg::String::ConstSharedPtr& msg) {
   filter_.clear();
 
   std::string curr_token;
-  std::stringstream ss(msg.data);
+  std::stringstream ss(msg->data);
   while (std::getline(ss, curr_token, ',')) {
     const auto lparen = curr_token.find("(");
     if (lparen == std::string::npos) {

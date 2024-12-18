@@ -34,16 +34,16 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_visualizer/utils/config_manager.h"
 
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <config_utilities/parsing/yaml.h>
-#include <dynamic_reconfigure/server.h>
+// #include <dynamic_reconfigure/server.h>
 #include <glog/logging.h>
 
 namespace hydra::visualizer {
 
-using hydra_visualizer::DynamicLayerVisualizerConfig;
-using hydra_visualizer::LayerVisualizerConfig;
-using hydra_visualizer::VisualizerConfig;
+using hydra::visualizer::DynamicLayerVisualizerConfig;
+using hydra::visualizer::LayerVisualizerConfig;
+using hydra::visualizer::VisualizerConfig;
 using spark_dsg::Color;
 using spark_dsg::DynamicSceneGraph;
 using spark_dsg::LayerId;
@@ -57,14 +57,15 @@ const std::string& getColorMode(const DynamicLayerVisualizerConfig& config) {
   return config.node_color_mode;
 }
 
-ColorManager::ColorManager(const ros::NodeHandle& nh, spark_dsg::LayerId layer)
-    : has_change_(false), nh_(nh, "color_settings"), layer_(layer) {
+ColorManager::ColorManager(const rclcpp::Node::SharedPtr node, spark_dsg::LayerId layer)
+    : has_change_(false), node_(node), layer_(layer) {
   // NOTE(nathan) this is ugly but probably the easiest way to parse the current
   // settings from ros
   std::stringstream ss;
-  ss << config::internal::rosToYaml(nh_);
+  ss << config::internal::rosToYaml(node_);
   curr_contents_ = ss.str();
-  sub_ = nh_.subscribe("", 1, &ColorManager::callback, this);
+  sub_ = node_->create_subscription<std_msgs::msg::String>("", 1, 
+          std::bind(&ColorManager::callback, this, std::placeholders::_1));
 }
 
 ColorManager::ColorFunc ColorManager::get(const DynamicSceneGraph& graph) const {
@@ -102,19 +103,20 @@ bool ColorManager::hasChange() const { return has_change_; }
 
 void ColorManager::clearChangeFlag() { has_change_ = false; }
 
-void ColorManager::callback(const std_msgs::String& msg) {
-  curr_contents_ = msg.data;
+void ColorManager::callback(const std_msgs::msg::String::ConstSharedPtr& msg) {
+  curr_contents_ = msg->data;
   setAdaptor();
 }
 
-LabelManager::LabelManager(const ros::NodeHandle& nh)
-    : has_change_(false), nh_(nh, "label_settings") {
+LabelManager::LabelManager(const rclcpp::Node::SharedPtr node)
+    : has_change_(false), node_(node) {
   // NOTE(nathan) this is ugly but probably the easiest way to parse the current
   // settings from ros
   std::stringstream ss;
-  ss << config::internal::rosToYaml(nh_);
+  ss << config::internal::rosToYaml(node_);
   curr_contents_ = ss.str();
-  sub_ = nh_.subscribe("", 1, &LabelManager::callback, this);
+  sub_ = node_->create_subscription<std_msgs::msg::String>("", 1, 
+          std::bind(&LabelManager::callback, this, std::placeholders::_1));
 }
 
 LabelManager::LabelFunc LabelManager::get() const {
@@ -150,12 +152,12 @@ bool LabelManager::hasChange() const { return has_change_; }
 
 void LabelManager::clearChangeFlag() { has_change_ = false; }
 
-void LabelManager::callback(const std_msgs::String& msg) {
-  curr_contents_ = msg.data;
+void LabelManager::callback(const std_msgs::msg::String::ConstSharedPtr& msg) {
+  curr_contents_ = msg->data;
   setAdaptor();
 }
 
-ConfigManager::ConfigManager() : nh_("~") {}
+ConfigManager::ConfigManager() {}
 
 ConfigManager::~ConfigManager() {
   visualizer_config_.reset();
@@ -171,8 +173,8 @@ ConfigManager& ConfigManager::instance() {
   return *s_instance_;
 }
 
-void ConfigManager::init(const ros::NodeHandle& nh) {
-  instance().nh_ = nh;
+void ConfigManager::init(const rclcpp::Node::SharedPtr node) {
+  instance().node_ = node;
   reset();
 }
 
@@ -230,7 +232,9 @@ void ConfigManager::clearChangeFlags() {
 const VisualizerConfig& ConfigManager::getVisualizerConfig() const {
   if (!visualizer_config_) {
     visualizer_config_ =
-        std::make_shared<ConfigWrapper<VisualizerConfig>>(nh_, "config");
+        std::make_shared<ConfigWrapper<VisualizerConfig>>(
+          "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/visualizer_defaults.yaml",
+          "");
   }
 
   return visualizer_config_->get();
@@ -239,8 +243,10 @@ const VisualizerConfig& ConfigManager::getVisualizerConfig() const {
 const StaticLayerConfig& ConfigManager::getLayerConfig(LayerId layer) const {
   auto iter = layers_.find(layer);
   if (iter == layers_.end()) {
-    const auto ns = "config/layer" + std::to_string(layer);
-    iter = layers_.emplace(layer, StaticLayerConfig(nh_, ns, layer)).first;
+    // const auto ns = "config/layer" + std::to_string(layer);
+    iter = layers_.emplace(layer, StaticLayerConfig(
+        "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/layer_defaults.yaml", 
+        "", node_, layer)).first;
   }
 
   return iter->second;
@@ -249,8 +255,10 @@ const StaticLayerConfig& ConfigManager::getLayerConfig(LayerId layer) const {
 const DynamicLayerConfig& ConfigManager::getDynamicLayerConfig(LayerId layer) const {
   auto iter = dynamic_layers_.find(layer);
   if (iter == dynamic_layers_.end()) {
-    const std::string ns = "config/dynamic_layer/layer" + std::to_string(layer);
-    iter = dynamic_layers_.emplace(layer, DynamicLayerConfig(nh_, ns, layer)).first;
+    // const std::string ns = "config/dynamic_layer/layer" + std::to_string(layer);
+    iter = dynamic_layers_.emplace(layer, DynamicLayerConfig(
+        "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/dynamic_layer_defaults.yaml",
+        "", node_, layer)).first;
   }
 
   return iter->second;
