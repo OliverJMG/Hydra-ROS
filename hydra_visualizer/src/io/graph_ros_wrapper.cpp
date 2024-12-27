@@ -43,10 +43,12 @@ namespace hydra {
 
 using spark_dsg::DynamicSceneGraph;
 
-GraphRosWrapper::GraphRosWrapper(const Config& config) : Node("graph_wrapper"),
+GraphRosWrapper::GraphRosWrapper(const Config& config) : 
+    node_{rclcpp::Node::make_shared("graph_ros_wrapper")},
     config(config::checkValid(config)), has_change_(false) {
-  sub_ = this->create_subscription<hydra_msgs::msg::DsgUpdate>("dsg", 1, 
+  sub_ = node_->create_subscription<hydra_msgs::msg::DsgUpdate>("/hydra_dsg_visualizer/dsg", 1, 
           std::bind(&GraphRosWrapper::graphCallback, this, std::placeholders::_1));
+  thread_ = std::thread([&]() {rclcpp::spin(node_);});
 }
 
 bool GraphRosWrapper::hasChange() const { return has_change_; }
@@ -67,7 +69,7 @@ void GraphRosWrapper::graphCallback(const hydra_msgs::msg::DsgUpdate::SharedPtr 
 
     has_change_ = true;
   } catch (const std::exception& e) {
-    RCLCPP_ERROR_STREAM(get_logger(), "Received invalid message: " << e.what());
+    RCLCPP_ERROR_STREAM(node_->get_logger(), "Received invalid message: " << e.what());
     return;
   }
 }

@@ -70,8 +70,7 @@ MeshPlugin::MeshPlugin(const Config& config,
                   std::placeholders::_1, std::placeholders::_2));
   }
 
-  // namespacing gives us a reasonable topic
-  mesh_pub_ = node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("", 1);
+  mesh_pub_ = node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("~/" + name, 1);
 }
 
 MeshPlugin::~MeshPlugin() {}

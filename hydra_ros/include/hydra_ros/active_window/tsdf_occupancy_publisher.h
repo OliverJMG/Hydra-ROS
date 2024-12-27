@@ -33,6 +33,7 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
+
 #include <hydra/active_window/reconstruction_module.h>
 
 #include "hydra_ros/utils/occupancy_publisher.h"
@@ -43,7 +44,7 @@ class TsdfOccupancyPublisher : public ReconstructionModule::Sink,
                                OccupancyPublisher<TsdfBlock> {
  public:
   struct Config : OccupancyPublisherConfig {
-    std::string ns = "~tsdf";
+    std::string ns = "tsdf";
   } const config;
 
   explicit TsdfOccupancyPublisher(const Config& config);

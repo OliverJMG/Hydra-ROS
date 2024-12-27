@@ -7,10 +7,10 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     # Declare arguments
-    rviz_verbose = LaunchConfiguration('rviz_verbose')
-    rviz_dir = LaunchConfiguration('rviz_dir')
-    rviz_file = LaunchConfiguration('rviz_file')
-    rviz_path = PathJoinSubstitution([rviz_dir, rviz_file])
+    # rviz_verbose = LaunchConfiguration('rviz_verbose')
+    # rviz_dir = LaunchConfiguration('rviz_dir')
+    # rviz_file = LaunchConfiguration('rviz_file')
+    # rviz_path = PathJoinSubstitution([rviz_dir, rviz_file])
 
     return LaunchDescription([
         # Declare launch arguments
@@ -21,7 +21,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'rviz_dir',
-            default_value=FindPackageShare('hydra_visualizer'),
+            default_value=PathJoinSubstitution([FindPackageShare('hydra_visualizer'), 'rviz']),
             description='Top-level RViz directory'
         ),
         DeclareLaunchArgument(
@@ -29,13 +29,18 @@ def generate_launch_description():
             default_value='hydra_visualizer.rviz',
             description='RViz file relative to the directory'
         ),
+        DeclareLaunchArgument(
+            'rviz_path',
+            default_value=PathJoinSubstitution([LaunchConfiguration('rviz_dir'), 
+                                                LaunchConfiguration('rviz_file')])
+        ),
 
         # Define the RViz node
         Node(
             package='rviz2',
             executable='rviz2',
-            name='rviz',
+            name='rviz2',
             output='screen',
-            arguments=['-d', rviz_path]
+            arguments=['-d', LaunchConfiguration('rviz_path')]
         ),
     ])

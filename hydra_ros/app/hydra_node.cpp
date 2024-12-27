@@ -36,11 +36,10 @@
 #include <config_utilities/external_registry.h>
 #include <config_utilities/formatting/asl.h>
 #include <config_utilities/logging/log_to_glog.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <hydra/common/global_info.h>
 
 #include "hydra_ros/hydra_ros_pipeline.h"
-#include "hydra_ros/utils/node_utilities.h"
 
 namespace hydra {
 
@@ -73,18 +72,37 @@ void declare_config(RunSettings& config) {
 }  // namespace hydra
 
 int main(int argc, char* argv[]) {
-  ros::init(argc, argv, "hydra_node");
-  ros::NodeHandle nh("~");
-
+  
   FLAGS_minloglevel = 0;
   FLAGS_logtostderr = 1;
   FLAGS_colorlogtostderr = 1;
 
-  google::ParseCommandLineFlags(&argc, &argv, true);
-  google::InitGoogleLogging(argv[0]);
+  // Strip ROS specific arguments that gflags can't parse
+  std::vector<std::string> non_ros_args = rclcpp::remove_ros_arguments(argc, argv);
+
+  // Create argc and argv equivalents
+  int non_ros_argc = non_ros_args.size();
+  char ** non_ros_argv = new char*[non_ros_argc];
+  for (size_t i = 0; i < non_ros_args.size(); ++i) {
+    non_ros_argv[i] = new char[non_ros_args.at(i).size() + 1]; // +1 for null-terminator
+    strcpy(non_ros_argv[i], non_ros_args.at(i).c_str());
+  }
+
+  google::InitGoogleLogging(non_ros_argv[0]);
+  google::ParseCommandLineFlags(&non_ros_argc, &non_ros_argv, false);
   google::InstallFailureSignalHandler();
 
-  const auto settings = config::fromRos<hydra::RunSettings>(nh);
+  for (size_t i = 0; i < non_ros_args.size(); ++i) {
+    delete [] non_ros_argv[i];
+  }
+  delete [] non_ros_argv;
+
+  rclcpp::init(argc, argv);
+  // const auto settings = config::fromRos<hydra::RunSettings>(nh);
+  hydra::RunSettings settings{};
+  settings.allow_plugins = true;
+  settings.trace_plugin_allocations = true;
+  // settings.paths = {"hydra_ros"};
 
   config::Settings().setLogger("glog");
   config::Settings().print_width = settings.print_width;
@@ -98,13 +116,23 @@ int main(int argc, char* argv[]) {
   hydra::GlobalInfo::instance().setForceShutdown(settings.force_shutdown);
 
   {  // start hydra scope
-    hydra::HydraRosPipeline hydra(nh, settings.robot_id);
-    hydra.init();
+    rclcpp::NodeOptions options{};
+    options.allow_undeclared_parameters(true);
+    options.automatically_declare_parameters_from_overrides(true);
+    auto hydra_node = std::make_shared<hydra::HydraRosPipeline>(options, settings.robot_id);
+    // auto pipeline_cfg = config::fromRos<hydra::HydraRosPipeline::Config>(
+    //         hydra_node->get_node_parameters_interface());
+    // hydra_node->configure(pipeline_cfg);
+    hydra_node->init();
 
-    hydra.start();
-    hydra::spinAndWait(nh);
-    hydra.stop();
-    hydra.save();
+    hydra_node->start();
+    auto executor = rclcpp::executors::MultiThreadedExecutor::make_shared();
+    executor->add_node(hydra_node);
+    executor->spin();
+    hydra_node->stop();
+    hydra_node->save();
+
+    rclcpp::shutdown();
     // TODO(nathan) save full config
     hydra::GlobalInfo::exit();
   }  // end hydra scope

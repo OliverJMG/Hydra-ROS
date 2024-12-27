@@ -35,24 +35,24 @@
 #include "hydra_ros/input/image_receiver.h"
 
 #include <config_utilities/config.h>
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <glog/logging.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/subscriber_filter.h>
+#include <image_transport/image_transport.hpp>
+#include <image_transport/subscriber_filter.hpp>
 
 namespace hydra {
 namespace {
 
-inline image_transport::TransportHints getHints(const ros::NodeHandle& nh,
+inline image_transport::TransportHints getHints(rclcpp::Node::SharedPtr node,
                                                 const std::string& ns) {
   namespace it = image_transport;
-  return it::TransportHints("raw", ros::TransportHints(), ros::NodeHandle(nh, ns));
+  return it::TransportHints(node.get(), "raw", ns + ".image_transport");
 }
 
 }  // namespace
 
 struct ImageSubImpl {
-  ImageSubImpl(const ros::NodeHandle& nh,
+  ImageSubImpl(rclcpp::Node::SharedPtr node,
                const std::string& camera_name,
                const std::string& image_name,
                uint32_t queue_size);
@@ -61,17 +61,18 @@ struct ImageSubImpl {
   image_transport::SubscriberFilter subscriber;
 };
 
-ImageSubImpl::ImageSubImpl(const ros::NodeHandle& nh,
+ImageSubImpl::ImageSubImpl(rclcpp::Node::SharedPtr node,
                            const std::string& cam_name,
                            const std::string& img_name,
                            uint32_t queue_size)
-    : transport(ros::NodeHandle(nh, cam_name)),
-      subscriber(transport, img_name, queue_size, getHints(nh, cam_name)) {}
+    : transport(node),
+      subscriber(node.get(), "~/" + cam_name + "/" + img_name, 
+                  getHints(node, cam_name).getTransport()) {}
 
 ColorSubscriber::ColorSubscriber() = default;
 
-ColorSubscriber::ColorSubscriber(const ros::NodeHandle& nh, uint32_t queue_size)
-    : impl_(std::make_shared<ImageSubImpl>(nh, "rgb", "image_raw", queue_size)) {}
+ColorSubscriber::ColorSubscriber(rclcpp::Node::SharedPtr node, uint32_t queue_size)
+    : impl_(std::make_shared<ImageSubImpl>(node, "rgb", "image_raw", queue_size)) {}
 
 ColorSubscriber::~ColorSubscriber() = default;
 
@@ -79,7 +80,7 @@ ImageSimpleFilter& ColorSubscriber::getFilter() const {
   return CHECK_NOTNULL(impl_)->subscriber;
 }
 
-void ColorSubscriber::fillInput(const sensor_msgs::Image& img,
+void ColorSubscriber::fillInput(const sensor_msgs::msg::Image& img,
                                 ImageInputPacket& packet) const {
   try {
     packet.color = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::RGB8)->image;
@@ -90,9 +91,9 @@ void ColorSubscriber::fillInput(const sensor_msgs::Image& img,
 
 DepthSubscriber::DepthSubscriber() = default;
 
-DepthSubscriber::DepthSubscriber(const ros::NodeHandle& nh, uint32_t queue_size)
+DepthSubscriber::DepthSubscriber(rclcpp::Node::SharedPtr node, uint32_t queue_size)
     : impl_(std::make_shared<ImageSubImpl>(
-          nh, "depth_registered", "image_rect", queue_size)) {}
+          node, "depth_registered", "image_rect", queue_size)) {}
 
 DepthSubscriber::~DepthSubscriber() = default;
 
@@ -100,7 +101,7 @@ ImageSimpleFilter& DepthSubscriber::getFilter() const {
   return CHECK_NOTNULL(impl_)->subscriber;
 }
 
-void DepthSubscriber::fillInput(const sensor_msgs::Image& img,
+void DepthSubscriber::fillInput(const sensor_msgs::msg::Image& img,
                                 ImageInputPacket& packet) const {
   try {
     packet.depth = cv_bridge::toCvCopy(img)->image;
@@ -111,8 +112,8 @@ void DepthSubscriber::fillInput(const sensor_msgs::Image& img,
 
 LabelSubscriber::LabelSubscriber() = default;
 
-LabelSubscriber::LabelSubscriber(const ros::NodeHandle& nh, uint32_t queue_size)
-    : impl_(std::make_shared<ImageSubImpl>(nh, "semantic", "image_raw", queue_size)) {}
+LabelSubscriber::LabelSubscriber(rclcpp::Node::SharedPtr node, uint32_t queue_size)
+    : impl_(std::make_shared<ImageSubImpl>(node, "semantic", "image_raw", queue_size)) {}
 
 LabelSubscriber::~LabelSubscriber() = default;
 
@@ -120,7 +121,7 @@ ImageSimpleFilter& LabelSubscriber::getFilter() const {
   return CHECK_NOTNULL(impl_)->subscriber;
 }
 
-void LabelSubscriber::fillInput(const sensor_msgs::Image& img,
+void LabelSubscriber::fillInput(const sensor_msgs::msg::Image& img,
                                 ImageInputPacket& packet) const {
   try {
     packet.labels = cv_bridge::toCvCopy(img)->image;
@@ -139,12 +140,12 @@ ClosedSetImageReceiver::ClosedSetImageReceiver(const Config& config,
                                                const std::string& sensor_name)
     : ImageReceiverImpl<LabelSubscriber>(config, sensor_name) {}
 
-namespace {
-static const auto registration =
-    config::RegistrationWithConfig<DataReceiver,
-                                   ClosedSetImageReceiver,
-                                   ClosedSetImageReceiver::Config,
-                                   std::string>("ClosedSetImageReceiver");
-}
+// namespace {
+// static const auto registration =
+//     config::RegistrationWithConfig<DataReceiver,
+//                                    ClosedSetImageReceiver,
+//                                    ClosedSetImageReceiver::Config,
+//                                    std::string>("ClosedSetImageReceiver");
+// }
 
 }  // namespace hydra

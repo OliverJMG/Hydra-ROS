@@ -64,6 +64,10 @@ void declare_config(ExternalPluginConfig& config) {
 
 int main(int argc, char** argv) {
 
+  FLAGS_minloglevel = 0;
+  FLAGS_logtostderr = 1;
+  FLAGS_colorlogtostderr = 1;
+
   // Strip ROS specific arguments that gflags can't parse
   std::vector<std::string> non_ros_args = rclcpp::remove_ros_arguments(argc, argv);
 
@@ -85,10 +89,6 @@ int main(int argc, char** argv) {
   delete [] non_ros_argv;
 
   rclcpp::init(argc, argv);
-
-  FLAGS_minloglevel = 0;
-  FLAGS_logtostderr = 1;
-  FLAGS_colorlogtostderr = 1;
 
   const auto plugin_config =
       config::fromYamlFile<hydra::visualizer::ExternalPluginConfig>(

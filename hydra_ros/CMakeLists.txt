@@ -20,6 +20,8 @@ find_package(image_transport REQUIRED)
 find_package(kimera_pgmo_ros REQUIRED)
 find_package(kimera_pgmo_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+# find_package(rclcpp_components REQUIRED)
+find_package(rosbag2_transport REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -27,15 +29,15 @@ find_package(visualization_msgs REQUIRED)
 find_package(pose_graph_tools_ros REQUIRED)
 find_package(nav_interfaces REQUIRED)
 
-
 add_library(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME} SHARED
   src/hydra_ros_pipeline.cpp
   src/active_window/reconstruction_visualizer.cpp
   src/active_window/tsdf_occupancy_publisher.cpp
   src/backend/ros_backend_publisher.cpp
   src/frontend/gvd_occupancy_publisher.cpp
   src/frontend/gvd_visualization_utilities.cpp
+  src/frontend/gvd_visualizer_config.cpp
   src/frontend/object_visualizer.cpp
   src/frontend/places_visualizer.cpp
   src/frontend/ros_frontend_publisher.cpp
@@ -53,7 +55,6 @@ add_library(
   src/utils/bow_subscriber.cpp
   src/utils/dsg_streaming_interface.cpp
   src/utils/input_data_to_messages.cpp
-  src/utils/node_utilities.cpp
   src/utils/occupancy_publisher.cpp
   src/utils/pose_cache.cpp
   src/utils/scene_graph_logger.cpp
@@ -80,6 +81,7 @@ ament_target_dependencies(${PROJECT_NAME} PUBLIC
   kimera_pgmo_ros
   kimera_pgmo_msgs
   rclcpp
+  rosbag2_transport
   std_msgs
   tf2_eigen
   tf2_ros
@@ -135,7 +137,7 @@ install(DIRECTORY include/
         DESTINATION include/
 )
 
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
+install(DIRECTORY launch config rviz DESTINATION share/${PROJECT_NAME}/)
 
 # ament_python_install_package(${PROJECT_NAME})
 

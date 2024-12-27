@@ -49,7 +49,7 @@
 
 #include <config_utilities/factory.h>
 #include <hydra/odometry/pose_graph_tracker.h>
-#include <pose_graph_tools_msgs/msg/pose_graph.hpp>
+#include <nav_interfaces/msg/pose_graph.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <mutex>
@@ -60,11 +60,11 @@ namespace hydra {
  * @brief Odometry input that subscribes to pose graph
  * messages from Kimera or other sources that follow its output types.
  */
-class RosPoseGraphTracker : public PoseGraphTracker {
+class RosPoseGraphTracker : public rclcpp::Node, public PoseGraphTracker {
  public:
   struct Config {
     //! ROS namespace
-    std::string ns = "~";
+    std::string ns = "";
     //! Size of the odometry subscriber queue.
     size_t queue_size = 1000;
   } const config;
@@ -76,12 +76,11 @@ class RosPoseGraphTracker : public PoseGraphTracker {
                          const Eigen::Isometry3d& world_T_body) override;
 
  protected:
-  void odomCallback(const pose_graph_tools_msgs::PoseGraph& pose_graph);
-  void priorCallback(const pose_graph_tools_msgs::PoseGraph& pose_graph);
+  void odomCallback(nav_interfaces::msg::PoseGraph::ConstSharedPtr pose_graph);
+  void priorCallback(nav_interfaces::msg::PoseGraph::ConstSharedPtr pose_graph);
 
-  ros::NodeHandle nh_;
-  ros::Subscriber odom_sub_;
-  ros::Subscriber prior_sub_;
+  rclcpp::Subscription<nav_interfaces::msg::PoseGraph>::SharedPtr odom_sub_;
+  rclcpp::Subscription<nav_interfaces::msg::PoseGraph>::SharedPtr prior_sub_;
 
   std::mutex mutex_;
   std::vector<pose_graph_tools::PoseGraph> pose_graphs_;

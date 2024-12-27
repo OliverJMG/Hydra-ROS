@@ -26,6 +26,7 @@
   <exec_depend>kimera_pgmo_rviz</exec_depend>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 
 </package>

@@ -43,30 +43,29 @@
 namespace hydra {
 
 using kimera_pgmo_msgs::msg::KimeraPgmoMeshDelta;
-using pose_graph_tools_msgs::msg::PoseGraph;
+using nav_interfaces::msg::PoseGraph;
 
-RosFrontendPublisher::RosFrontendPublisher(const ros::NodeHandle& node_handle)
-    : nh_(node_handle) {
+RosFrontendPublisher::RosFrontendPublisher(const rclcpp::NodeOptions& options)
+    : Node("frontend", "hydra_ros_node", options) {
   const auto odom_frame = GlobalInfo::instance().getFrames().odom;
-  dsg_sender_.reset(new DsgSender(nh_, odom_frame, "frontend", false));
-  mesh_graph_pub_ = nh_.advertise<PoseGraph>("mesh_graph_incremental", 100, true);
-  mesh_update_pub_ = nh_.advertise<KimeraPgmoMeshDelta>("full_mesh_update", 100, true);
+  dsg_sender_.reset(new DsgSender(*this, odom_frame, "frontend", false));
+  auto latch_qos = rclcpp::QoS(100).transient_local();
+  mesh_graph_pub_ = this->create_publisher<PoseGraph>("~/mesh_graph_incremental", latch_qos);
+  mesh_update_pub_ = this->create_publisher<KimeraPgmoMeshDelta>("~/full_mesh_update", latch_qos);
 }
 
 void RosFrontendPublisher::call(uint64_t timestamp_ns,
                                 const DynamicSceneGraph& graph,
                                 const BackendInput& backend_input) const {
   auto msg = pose_graph_tools::toMsg(backend_input.deformation_graph);
-  msg.header.stamp.fromNSec(timestamp_ns);
-  mesh_graph_pub_.publish(msg);
+  msg.header.stamp = rclcpp::Time(timestamp_ns);
+  mesh_graph_pub_->publish(msg);
 
   if (backend_input.mesh_update) {
-    mesh_update_pub_.publish(
-        kimera_pgmo::conversions::toRosMsg(*backend_input.mesh_update, timestamp_ns));
+    mesh_update_pub_->publish(kimera_pgmo::conversions::toRosMsg(*backend_input.mesh_update, timestamp_ns));
   }
 
-  ros::Time stamp;
-  stamp.fromNSec(timestamp_ns);
+  rclcpp::Time stamp{static_cast<int64_t>(timestamp_ns)};
   dsg_sender_->sendGraph(graph, stamp);
 }
 

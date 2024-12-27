@@ -100,9 +100,9 @@ struct MarkerNamespaces {
   }
 };
 
-SceneGraphRenderer::SceneGraphRenderer(const rclcpp::Node::SharedPtr nh)
-    : nh_(nh), pub_(nh_->create_publisher<MarkerArray>("dsg_markers", 1)) {
-  ConfigManager::init(nh_);
+SceneGraphRenderer::SceneGraphRenderer(const rclcpp::Node::SharedPtr node)
+    : node_(node), pub_(node_->create_publisher<MarkerArray>("~/dsg_markers", 1)) {
+  ConfigManager::init(node_);
 }
 
 void SceneGraphRenderer::reset(const std_msgs::msg::Header& header) {

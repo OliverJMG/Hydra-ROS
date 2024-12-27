@@ -58,18 +58,17 @@ void declare_config(DsgVisualizer::Config& config) {
 }
 
 DsgVisualizer::DsgVisualizer()
-    : Node("dsg_visualizer", rclcpp::NodeOptions().allow_undeclared_parameters(true)
+    : Node("hydra_dsg_visualizer", rclcpp::NodeOptions().allow_undeclared_parameters(true)
                         .automatically_declare_parameters_from_overrides(true)) {}
 
 void DsgVisualizer::configure() {
-  config = config::fromRos<hydra::DsgVisualizer::Config>(this->shared_from_this());
+  config = config::fromRos<hydra::DsgVisualizer::Config>(this->get_node_parameters_interface());
   // config::checkValid<hydra::DsgVisualizer::Config>(config);
   RCLCPP_INFO_STREAM(get_logger(), config::toString(config));
   renderer_ = std::make_shared<SceneGraphRenderer>(this->shared_from_this());
-  auto all_params = this->list_parameters({"plugins"}, rcl_interfaces::srv::ListParameters::Request::DEPTH_RECURSIVE);
   
   for (auto&& [name, plugin] : config.plugins) {
-    plugins_.push_back(plugin.create(this, name));
+    plugins_.push_back(plugin.create(this->shared_from_this(), name));
   }
   graph_ = config.graph.create();
 

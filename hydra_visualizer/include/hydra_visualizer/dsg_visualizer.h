@@ -47,6 +47,7 @@
 #include "hydra_visualizer/plugins/footprint_plugin.h"
 #include "hydra_visualizer/plugins/khronos_object_plugin.h"
 #include "hydra_visualizer/plugins/mesh_plugin.h"
+#include "hydra_visualizer/plugins/visualizer_plugin.h"
 #include "hydra_visualizer/scene_graph_renderer.h"
 
 namespace hydra {
@@ -54,7 +55,7 @@ namespace hydra {
 class DsgVisualizer : public rclcpp::Node {
  public:
   struct Config {
-    std::string ns = "~";
+    std::string ns = "";
     double loop_period_s = 0.1;
     std::string visualizer_frame = "map";
     config::VirtualConfig<GraphWrapper> graph;

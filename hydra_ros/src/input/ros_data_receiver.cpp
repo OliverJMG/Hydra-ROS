@@ -38,9 +38,9 @@
 
 namespace hydra {
 
-inline std::string getNamespace(const std::string& ns, const std::string& name) {
-  return ns.empty() ? "~/input/" + name : ns;
-}
+// inline std::string getNamespace(const std::string& ns, const std::string& name) {
+//   return ns.empty() ? "~/input/" + name : ns;
+// }
 
 void declare_config(RosDataReceiver::Config& config) {
   using namespace config;
@@ -53,6 +53,11 @@ void declare_config(RosDataReceiver::Config& config) {
 RosDataReceiver::RosDataReceiver(const Config& config, const std::string& sensor_name)
     : DataReceiver(config, sensor_name),
       config(config),
-      nh_(getNamespace(config.ns, sensor_name)) {}
-
+      node_{std::make_shared<rclcpp::Node>(
+          config.ns.empty() ?  sensor_name : config.ns, "input")} {
+  thread_ = std::thread([&]() {
+    rclcpp::spin(node_);
+  });
 }  // namespace hydra
+
+}

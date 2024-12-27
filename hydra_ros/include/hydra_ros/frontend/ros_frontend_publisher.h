@@ -35,14 +35,16 @@
 #pragma once
 #include <hydra/frontend/graph_builder.h>
 #include <rclcpp/rclcpp.hpp>
+#include <nav_interfaces/msg/pose_graph.hpp>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh_delta.hpp>
 
 #include "hydra_ros/utils/dsg_streaming_interface.h"
 
 namespace hydra {
 
-class RosFrontendPublisher : public GraphBuilder::Sink {
+class RosFrontendPublisher : public rclcpp::Node, public GraphBuilder::Sink {
  public:
-  RosFrontendPublisher(const ros::NodeHandle& nh);
+  RosFrontendPublisher(const rclcpp::NodeOptions& options);
 
   void call(uint64_t timestamp_ns,
             const DynamicSceneGraph& graph,
@@ -51,11 +53,10 @@ class RosFrontendPublisher : public GraphBuilder::Sink {
   std::string printInfo() const override { return "RosFrontendPublisher"; }
 
  protected:
-  ros::NodeHandle nh_;
 
   std::unique_ptr<DsgSender> dsg_sender_;
-  ros::Publisher mesh_graph_pub_;
-  ros::Publisher mesh_update_pub_;
+  rclcpp::Publisher<nav_interfaces::msg::PoseGraph>::SharedPtr mesh_graph_pub_;
+  rclcpp::Publisher<kimera_pgmo_msgs::msg::KimeraPgmoMeshDelta>::SharedPtr mesh_update_pub_;
 };
 
 }  // namespace hydra

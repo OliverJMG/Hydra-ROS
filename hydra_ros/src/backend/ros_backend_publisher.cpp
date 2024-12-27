@@ -40,9 +40,8 @@
 #include <config_utilities/validation.h>
 #include <hydra/common/global_info.h>
 #include <kimera_pgmo_ros/visualization_functions.h>
-#include <nav_interfaces/msg/pose_graph.hpp>
 #include <pose_graph_tools_ros/conversions.h>
-#include <visualization_msgs/msg/marker.hpp>
+
 
 namespace hydra {
 
@@ -58,32 +57,36 @@ void declare_config(RosBackendPublisher::Config& config) {
   field(config.publish_mesh, "publish_mesh");
 }
 
-RosBackendPublisher::RosBackendPublisher(const ros::NodeHandle& nh)
-    : config(config::checkValid(config::fromRos<Config>(nh))), nh_(nh) {
+RosBackendPublisher::RosBackendPublisher(const rclcpp::NodeOptions& options)
+    : Node("backend", "hydra_ros_node", options),
+      config() {
   mesh_mesh_edges_pub_ =
-      nh_.advertise<Marker>("deformation_graph_mesh_mesh", 10, false);
+      this->create_publisher<Marker>("~/deformation_graph_mesh_mesh", 10);
   pose_mesh_edges_pub_ =
-      nh_.advertise<Marker>("deformation_graph_pose_mesh", 10, false);
-  pose_graph_pub_ = nh_.advertise<PoseGraph>("pose_graph", 10, false);
+      this->create_publisher<Marker>("~/deformation_graph_pose_mesh", 10);
+  pose_graph_pub_ = this->create_publisher<PoseGraph>("~/pose_graph", 10);
+}
+
+void RosBackendPublisher::configure() {
+  config = config::checkValid(config::fromRos<Config>(this->shared_from_this()));
 
   const auto map_frame = GlobalInfo::instance().getFrames().map;
   dsg_sender_.reset(
-      new hydra::DsgSender(nh_, map_frame, "backend", config.publish_mesh));
+      new hydra::DsgSender(*this, map_frame, "backend", config.publish_mesh));
 }
 
 void RosBackendPublisher::call(uint64_t timestamp_ns,
                                const DynamicSceneGraph& graph,
                                const DeformationGraph& dgraph) const {
-  ros::Time stamp;
-  stamp.fromNSec(timestamp_ns);
+  rclcpp::Time stamp{static_cast<int64_t>(timestamp_ns)};
   dsg_sender_->sendGraph(graph, stamp);
 
-  if (pose_graph_pub_.getNumSubscribers() > 0) {
+  if (pose_graph_pub_->get_subscription_count() > 0) {
     publishPoseGraph(graph, dgraph);
   }
 
-  if (mesh_mesh_edges_pub_.getNumSubscribers() > 0 ||
-      pose_mesh_edges_pub_.getNumSubscribers() > 0) {
+  if (mesh_mesh_edges_pub_->get_subscription_count() > 0 ||
+      pose_mesh_edges_pub_->get_subscription_count() > 0) {
     publishDeformationGraphViz(dgraph, timestamp_ns);
   }
 }
@@ -103,13 +106,12 @@ void RosBackendPublisher::publishPoseGraph(const DynamicSceneGraph& graph,
   }
 
   const auto& pose_graph = *dgraph.getPoseGraph(id_timestamps);
-  pose_graph_pub_.publish(pose_graph_tools::toMsg(pose_graph));
+  pose_graph_pub_->publish(pose_graph_tools::toMsg(pose_graph));
 }
 
 void RosBackendPublisher::publishDeformationGraphViz(const DeformationGraph& dgraph,
                                                      size_t timestamp_ns) const {
-  ros::Time stamp;
-  stamp.fromNSec(timestamp_ns);
+  rclcpp::Time stamp{static_cast<int64_t>(timestamp_ns)};
 
   Marker mm_edges_msg;
   Marker pm_edges_msg;
@@ -120,10 +122,10 @@ void RosBackendPublisher::publishDeformationGraphViz(const DeformationGraph& dgr
                                            GlobalInfo::instance().getFrames().map);
 
   if (!mm_edges_msg.points.empty()) {
-    mesh_mesh_edges_pub_.publish(mm_edges_msg);
+    mesh_mesh_edges_pub_->publish(mm_edges_msg);
   }
   if (!pm_edges_msg.points.empty()) {
-    pose_mesh_edges_pub_.publish(pm_edges_msg);
+    pose_mesh_edges_pub_->publish(pm_edges_msg);
   }
 }
 

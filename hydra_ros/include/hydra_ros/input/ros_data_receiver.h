@@ -49,7 +49,10 @@ class RosDataReceiver : public DataReceiver {
   virtual ~RosDataReceiver() = default;
 
  protected:
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node_;
+  // TODO(Oliver): Find a better way to spin these
+  std::thread thread_;
+
 };
 
 void declare_config(RosDataReceiver::Config& config);

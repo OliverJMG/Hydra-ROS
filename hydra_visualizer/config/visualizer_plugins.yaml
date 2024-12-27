@@ -3,7 +3,7 @@ hydra_dsg_visualizer:
     plugins:
       dsg_mesh:
         type: MeshPlugin
-        use_color_adaptor: $(arg color_mesh_by_label)
+        use_color_adaptor: $(var color_mesh_by_label)
         coloring:
           type: SemanticMeshColoring
       places_basis_points:

@@ -42,7 +42,7 @@
 #include <hydra/common/pipeline_queues.h>
 #include <hydra/frontend/view_selector.h>
 
-#include "hydra_ros_build_config.h"
+// #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
 #include <semantic_inference_msgs/msg/feature_vector_stamped.hpp>
@@ -136,7 +136,7 @@ void FeatureReceiver::start() {
 #endif
 
 FeatureReceiver::FeatureReceiver(const Config& config)
-    : config(config::checkValid(config)), lookup_(config.tf_lookup), nh_(config.ns) {}
+    : Node("feature_reciever", config.ns), config(config::checkValid(config)), lookup_(config.tf_lookup) {}
 
 FeatureReceiver::~FeatureReceiver() {}
 

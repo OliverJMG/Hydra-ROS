@@ -47,7 +47,7 @@ namespace hydra {
 
 class BowSubscriber;
 
-class HydraRosPipeline : public HydraPipeline {
+class HydraRosPipeline : public rclcpp::Node, public HydraPipeline {
  public:
   struct Config {
     config::VirtualConfig<ActiveWindowModule> active_window{
@@ -57,9 +57,9 @@ class HydraRosPipeline : public HydraPipeline {
     bool enable_frontend_output = true;
     RosInputModule::Config input;
     config::VirtualConfig<FeatureReceiver> features;
-  } const config;
+  } config;
 
-  HydraRosPipeline(const ros::NodeHandle& nh, int robot_id);
+  HydraRosPipeline(const rclcpp::NodeOptions& options, int robot_id);
 
   virtual ~HydraRosPipeline();
 
@@ -68,10 +68,11 @@ class HydraRosPipeline : public HydraPipeline {
   void stop() override;
 
  protected:
+  PipelineConfig loadPipelineConfig();
+
   virtual void initLCD();
 
  protected:
-  ros::NodeHandle nh_;
   std::shared_ptr<ActiveWindowModule> active_window_;
   std::shared_ptr<GraphBuilder> frontend_;
   std::shared_ptr<BackendModule> backend_;

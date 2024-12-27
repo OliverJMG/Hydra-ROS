@@ -1,5 +1,6 @@
----
-external_plugins:
-  allow_plugins: true
-  trace_plugin_allocations: true
-  paths: [hydra_ros]
+hydra_ros_node:
+  ros__parameters:
+    external_plugins:
+      allow_plugins: true
+      trace_plugin_allocations: true
+      paths: [hydra_ros]

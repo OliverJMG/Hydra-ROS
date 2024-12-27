@@ -86,8 +86,7 @@ FootprintPlugin::FootprintPlugin(const Config& config,
                                  const rclcpp::Node::SharedPtr node,
                                  const std::string& name)
     : VisualizerPlugin(node, name), config(config::checkValid(config)) {
-  // namespacing gives us a reasonable topic
-  pub_ = node_->create_publisher<MarkerArray>("", 1);
+  pub_ = node_->create_publisher<MarkerArray>("~/" + name, 1);
 }
 
 FootprintPlugin::~FootprintPlugin() {}

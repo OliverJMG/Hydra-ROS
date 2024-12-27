@@ -34,6 +34,7 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <spark_dsg/dynamic_scene_graph.h>
+#include <config_utilities/factory.h>
 
 namespace hydra::visualizer {
 
@@ -48,6 +49,11 @@ struct IdLabelAdaptor : GraphLabelAdaptor {
   explicit IdLabelAdaptor(const Config&) {}
   virtual ~IdLabelAdaptor() = default;
   std::string getLabel(const spark_dsg::SceneGraphNode& node) const override;
+
+  inline static const auto id_reg =
+    config::RegistrationWithConfig<GraphLabelAdaptor,
+                                   IdLabelAdaptor,
+                                   IdLabelAdaptor::Config>("IdLabelAdaptor");
 };
 
 void declare_config(IdLabelAdaptor::Config& config);
@@ -57,6 +63,10 @@ struct NameLabelAdaptor : GraphLabelAdaptor {
   explicit NameLabelAdaptor(const Config&) {}
   virtual ~NameLabelAdaptor() = default;
   std::string getLabel(const spark_dsg::SceneGraphNode& node) const override;
+
+  inline static const auto name_reg =
+    config::RegistrationWithConfig<GraphLabelAdaptor, NameLabelAdaptor, NameLabelAdaptor::Config>(
+        "NameLabelAdaptor");
 };
 
 void declare_config(NameLabelAdaptor::Config& config);

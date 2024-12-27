@@ -41,10 +41,10 @@
 
 namespace hydra {
 
-class GraphRosWrapper : public GraphWrapper, rclcpp::Node {
+class GraphRosWrapper : public GraphWrapper {
  public:
   struct Config {
-    std::string wrapper_ns = "~";
+    std::string wrapper_ns = "";
   } const config;
 
   explicit GraphRosWrapper(const Config& config);
@@ -59,6 +59,8 @@ class GraphRosWrapper : public GraphWrapper, rclcpp::Node {
   void graphCallback(const hydra_msgs::msg::DsgUpdate::SharedPtr msg);
 
   bool has_change_;
+  std::thread thread_;
+  rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<hydra_msgs::msg::DsgUpdate>::SharedPtr sub_;
   rclcpp::Time last_time_;
   spark_dsg::DynamicSceneGraph::Ptr graph_;

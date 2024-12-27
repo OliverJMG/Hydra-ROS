@@ -38,16 +38,15 @@
 
 namespace hydra {
 
-class BowSubscriber {
+class BowSubscriber : public rclcpp::Node {
  public:
-  explicit BowSubscriber(const ros::NodeHandle& nh);
+  explicit BowSubscriber(const rclcpp::NodeOptions& options);
 
  protected:
-  void callback(const pose_graph_tools_msgs::BowQueries& msg);
+  void callback(nav_interfaces::msg::BowQueries::ConstSharedPtr msg);
 
  protected:
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
+  rclcpp::Subscription<nav_interfaces::msg::BowQueries>::SharedPtr sub_;
 };
 
 }  // namespace hydra

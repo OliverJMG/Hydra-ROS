@@ -34,14 +34,13 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_ros/frontend/object_visualizer.h"
 
-#include <config_utilities/config.h>
 #include <config_utilities/printing.h>
 #include <config_utilities/validation.h>
 #include <hydra/common/global_info.h>
 
 namespace hydra {
 
-using visualization_msgs::Marker;
+using visualization_msgs::msg::Marker;
 
 void declare_config(ObjectVisualizer::Config& config) {
   using namespace config;
@@ -53,7 +52,9 @@ void declare_config(ObjectVisualizer::Config& config) {
 }
 
 ObjectVisualizer::ObjectVisualizer(const Config& config)
-    : config(config::checkValid(config)), nh_(config.module_ns), pubs_(nh_) {}
+    : Node(config.module_ns), 
+      config(config::checkValid(config)), 
+      pubs_("vertex_pub", "hydra_ros_node/frontend/objects") {}
 
 std::string ObjectVisualizer::printInfo() const { return config::toString(config); }
 
@@ -62,24 +63,24 @@ void ObjectVisualizer::call(uint64_t timestamp_ns,
                             const std::vector<size_t>& active,
                             const LabelIndices& label_indices) const {
   pubs_.publish("active_vertices", [&]() {
-    visualization_msgs::Marker msg;
-    msg.header.stamp.fromNSec(timestamp_ns);
-    msg.header.frame_id = GlobalInfo::instance().getFrames().odom;
-    msg.ns = "active_vertices";
-    msg.id = 0;
-    fillMarkerFromCloud(delta, active, msg);
+    auto msg = std::make_unique<visualization_msgs::msg::Marker>();
+    msg->header.stamp = rclcpp::Time(timestamp_ns);
+    msg->header.frame_id = GlobalInfo::instance().getFrames().odom;
+    msg->ns = "active_vertices";
+    msg->id = 0;
+    fillMarkerFromCloud(delta, active, *msg);
     return msg;
   });
 
   for (const auto& id_label_pair : label_indices) {
     pubs_.publish("object_vertices/label" + std::to_string(id_label_pair.first), [&]() {
       const auto& [label, indices] = id_label_pair;
-      visualization_msgs::Marker msg;
-      msg.header.stamp.fromNSec(timestamp_ns);
-      msg.header.frame_id = GlobalInfo::instance().getFrames().odom;
-      msg.ns = "label_vertices_" + std::to_string(label);
-      msg.id = 0;
-      fillMarkerFromCloud(delta, indices, msg);
+      auto msg = std::make_unique<visualization_msgs::msg::Marker>();
+      msg->header.stamp = rclcpp::Time(timestamp_ns);
+      msg->header.frame_id = GlobalInfo::instance().getFrames().odom;
+      msg->ns = "label_vertices_" + std::to_string(label);
+      msg->id = 0;
+      fillMarkerFromCloud(delta, indices, *msg);
       return msg;
     });
   }
@@ -89,7 +90,7 @@ void ObjectVisualizer::fillMarkerFromCloud(const kimera_pgmo::MeshDelta& delta,
                                            const std::vector<size_t>& indices,
                                            Marker& msg) const {
   msg.type = config.use_spheres ? Marker::SPHERE_LIST : Marker::CUBE_LIST;
-  msg.action = visualization_msgs::Marker::ADD;
+  msg.action = Marker::ADD;
 
   msg.scale.x = config.point_scale;
   msg.scale.y = config.point_scale;

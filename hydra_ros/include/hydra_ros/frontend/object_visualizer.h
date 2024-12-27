@@ -33,6 +33,7 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
+#include <config_utilities/config.h>
 #include <hydra/frontend/mesh_segmenter.h>
 #include <kimera_pgmo/mesh_delta.h>
 #include <rclcpp/rclcpp.hpp>
@@ -42,10 +43,10 @@
 
 namespace hydra {
 
-class ObjectVisualizer : public MeshSegmenter::Sink {
+class ObjectVisualizer : public rclcpp::Node, public MeshSegmenter::Sink {
  public:
   struct Config {
-    std::string module_ns = "~objects";
+    std::string module_ns = "objects";
     double point_scale = 0.1;
     double point_alpha = 0.7;
     bool use_spheres = false;
@@ -68,12 +69,13 @@ class ObjectVisualizer : public MeshSegmenter::Sink {
                            visualization_msgs::msg::Marker& marker) const;
 
  protected:
-  ros::NodeHandle nh_;
   RosPublisherGroup<visualization_msgs::msg::Marker> pubs_;
 
  private:
   inline static const auto registration_ =
-      config::RegistrationWithConfig<MeshSegmenter::Sink, ObjectVisualizer, Config>(
+      config::RegistrationWithConfig<MeshSegmenter::Sink, 
+                                     ObjectVisualizer, 
+                                     ObjectVisualizer::Config>(
           "ObjectVisualizer");
 };
 

@@ -54,7 +54,8 @@
 
 namespace hydra {
 
-using PoseGraphMsg = pose_graph_tools_msgs::PoseGraph;
+using std::placeholders::_1;
+using PoseGraphMsg = nav_interfaces::msg::PoseGraph;
 
 void declare_config(RosPoseGraphTracker::Config& config) {
   using namespace config;
@@ -64,13 +65,14 @@ void declare_config(RosPoseGraphTracker::Config& config) {
 }
 
 RosPoseGraphTracker::RosPoseGraphTracker(const Config& config)
-    : config(config::checkValid(config)), nh_(config.ns) {
-  odom_sub_ = nh_.subscribe(
-      "pose_graph", config.queue_size, &RosPoseGraphTracker::odomCallback, this);
-  prior_sub_ = nh_.subscribe("agent_node_measurements",
+    : Node("pose_graph_tracker", config.ns), 
+      config(config::checkValid(config)) {
+  odom_sub_ = this->create_subscription<PoseGraphMsg>(
+      "pose_graph", config.queue_size, std::bind(&RosPoseGraphTracker::odomCallback, this, _1));
+  prior_sub_ = this->create_subscription<PoseGraphMsg>("agent_node_measurements",
                              config.queue_size,
-                             &RosPoseGraphTracker::priorCallback,
-                             this);
+                             std::bind(&RosPoseGraphTracker::priorCallback,
+                             this, _1));
 }
 
 // Return pose graphs and priors received from Kimera since the last call
@@ -87,20 +89,20 @@ PoseGraphPacket RosPoseGraphTracker::update(uint64_t, const Eigen::Isometry3d&) 
   return packet;
 }
 
-void RosPoseGraphTracker::odomCallback(const PoseGraphMsg& msg) {
-  if (msg.nodes.empty()) {
+void RosPoseGraphTracker::odomCallback(PoseGraphMsg::ConstSharedPtr msg) {
+  if (msg->nodes.empty()) {
     LOG(WARNING) << "[RosPoseGraphTracker] Received empty pose graph, skipping!";
     return;
   }
 
   std::unique_lock<std::mutex> lock(mutex_);
-  pose_graphs_.push_back(pose_graph_tools::fromMsg(msg));
+  pose_graphs_.push_back(pose_graph_tools::fromMsg(*msg));
 }
 
-void RosPoseGraphTracker::priorCallback(const PoseGraphMsg& msg) {
+void RosPoseGraphTracker::priorCallback(PoseGraphMsg::ConstSharedPtr msg) {
   std::unique_lock<std::mutex> lock(mutex_);
   external_priors_ =
-      std::make_shared<pose_graph_tools::PoseGraph>(pose_graph_tools::fromMsg(msg));
+      std::make_shared<pose_graph_tools::PoseGraph>(pose_graph_tools::fromMsg(*msg));
 }
 
 }  // namespace hydra

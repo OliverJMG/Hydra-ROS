@@ -36,6 +36,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <spark_dsg/color.h>
+#include <functional>
 
 namespace hydra {
 
@@ -44,14 +45,14 @@ struct InputData;
 /**
  * @brief Make a colored image for the current labels in the input data
  */
-sensor_msgs::Image::Ptr makeImage(const std_msgs::Header& header,
+sensor_msgs::msg::Image::SharedPtr makeImage(const std_msgs::msg::Header& header,
                                   const InputData& sensor_data,
                                   const std::function<spark_dsg::Color(uint32_t)>& colormap);
 
 /**
  * @brief Convert the input pointcloud to a ROS type
  */
-sensor_msgs::PointCloud2::Ptr makeCloud(const std_msgs::Header& header,
+sensor_msgs::msg::PointCloud2::UniquePtr makeCloud(const std_msgs::msg::Header& header,
                                         const InputData& sensor_data,
                                         bool filter_by_range);
 

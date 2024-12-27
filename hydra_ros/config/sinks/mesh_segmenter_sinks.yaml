@@ -1,2 +1,7 @@
-sinks:
-  - type: ObjectVisualizer
+hydra_ros_node:
+  ros__parameters:
+    frontend:
+      objects:
+        sinks:
+          obj:
+            type: ObjectVisualizer

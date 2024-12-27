@@ -44,7 +44,7 @@ class GvdOccupancyPublisher : public GvdPlaceExtractor::Sink,
                               OccupancyPublisher<places::GvdBlock> {
  public:
   struct Config : OccupancyPublisherConfig {
-    std::string ns = "~gvd";
+    std::string ns = "gvd";
   } const config;
 
   explicit GvdOccupancyPublisher(const Config& config);
@@ -57,6 +57,13 @@ class GvdOccupancyPublisher : public GvdPlaceExtractor::Sink,
             const Eigen::Isometry3f& world_T_sensor,
             const places::GvdLayer& gvd,
             const places::GraphExtractorInterface* extractor) const override;
+
+ private:
+  inline static const auto registration_ =
+    config::RegistrationWithConfig<GvdPlaceExtractor::Sink,
+                                   GvdOccupancyPublisher,
+                                   GvdOccupancyPublisher::Config>(
+        "GvdOccupancyPublisher");
 };
 
 void declare_config(GvdOccupancyPublisher::Config& config);

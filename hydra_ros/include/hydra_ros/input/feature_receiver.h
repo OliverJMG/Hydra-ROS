@@ -43,11 +43,11 @@ namespace hydra {
 
 struct FeatureSubscriber;
 
-class FeatureReceiver : public Module {
+class FeatureReceiver : public rclcpp::Node, public Module {
  public:
   struct Config {
     //! Node handle namespace (defaults to matching data receivers)
-    std::string ns = "~input";
+    std::string ns = "input";
     //! Individual subscriber queue size
     size_t queue_size = 10;
     //! Lookup settings for poses
@@ -65,7 +65,6 @@ class FeatureReceiver : public Module {
 
  private:
   TFLookup lookup_;
-  ros::NodeHandle nh_;
   std::vector<std::unique_ptr<FeatureSubscriber>> subs_;
 
   inline static const auto registration_ =

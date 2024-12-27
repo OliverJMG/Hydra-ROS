@@ -137,7 +137,7 @@ bool loadRegions(const std::filesystem::path& region_filepath,
 
 RegionPublisher::RegionPublisher()
     : Node("region_publisher"),
-      config(config::checkValid(config::fromRos<RegionPublisher::Config>(this->shared_from_this()))),
+      config(config::checkValid(config::fromRos<RegionPublisher::Config>(this->get_node_parameters_interface()))),
       published_(false),
       pub_(this->create_publisher<MarkerArray>("regions", 1)) {
   VLOG(1) << config::toString(config);

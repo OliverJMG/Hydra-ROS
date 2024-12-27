@@ -40,6 +40,7 @@
 #include <hydra/common/global_info.h>
 
 #include "hydra_ros/input/ros_sensors.h"
+#include "hydra_ros/input/ros_data_receiver.h"
 
 namespace hydra {
 

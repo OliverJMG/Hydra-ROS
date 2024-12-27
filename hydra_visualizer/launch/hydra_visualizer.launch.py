@@ -99,7 +99,7 @@ def generate_launch_description():
             arguments=[
                 '-alsologtostderr',
                 '-colorlogtostderr',
-                # '-v=' + LaunchConfiguration('verbosity')
+                ['-v=', LaunchConfiguration('verbosity')]
             ],
             remappings=[]
         ),

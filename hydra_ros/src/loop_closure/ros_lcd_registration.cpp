@@ -36,7 +36,6 @@
 
 #include <hydra/utils/timing_utilities.h>
 #include <kimera_pgmo/utils/common_functions.h>
-#include <nav_interfaces/msg/lcd_frame_registration.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 
@@ -66,6 +65,12 @@ std::string getPoseRepr(const Eigen::Quaterniond& q, const Eigen::Vector3d& v) {
   return ss.str();
 }
 
+DsgAgentSolver::DsgAgentSolver() {
+  node_ = rclcpp::Node::make_shared("dsg_agent_solver");
+  frame_reg_client_ = 
+          node_->create_client<nav_interfaces::srv::LcdFrameRegistration>("frame_registration");
+}
+
 RegistrationSolution DsgAgentSolver::solve(const DynamicSceneGraph& dsg,
                                            const DsgRegistrationInput& match,
                                            NodeId) const {
@@ -73,7 +78,7 @@ RegistrationSolution DsgAgentSolver::solve(const DynamicSceneGraph& dsg,
     return {};
   }
 
-  if (!ros::service::exists("frame_registration", true)) {
+  if (!frame_reg_client_->service_is_ready()) {
     LOG(ERROR) << "[Hydra LCD] Frame registration service missing!";
     return {};
   }
@@ -87,39 +92,58 @@ RegistrationSolution DsgAgentSolver::solve(const DynamicSceneGraph& dsg,
     return {};
   }
 
-  pose_graph_tools_msgs::LcdFrameRegistration msg;
-  msg.request.query_robot = getRobotIdFromNode(dsg, query_id);
-  msg.request.match_robot = getRobotIdFromNode(dsg, match_id);
-  msg.request.query = getFrameIdFromNode(dsg, query_id);
-  msg.request.match = getFrameIdFromNode(dsg, match_id);
+  auto request = std::make_shared<nav_interfaces::srv::LcdFrameRegistration::Request>();
+  request->query_robot = getRobotIdFromNode(dsg, query_id);
+  request->match_robot = getRobotIdFromNode(dsg, match_id);
+  request->query = getFrameIdFromNode(dsg, query_id);
+  request->match = getFrameIdFromNode(dsg, match_id);
   uint64_t timestamp = dsg.getNode(query_id).timestamp.value().count();
 
   ScopedTimer timer("lcd/register_agent", timestamp, true, 2, false);
 
-  if (!ros::service::call("frame_registration", msg)) {
-    LOG(ERROR) << "Frame registration service failed!";
-    return {};
+  // Wait for the service to become available
+  while (!frame_reg_client_->wait_for_service(std::chrono::seconds(1))) {
+    if (!rclcpp::ok()) {
+      LOG(ERROR) << "Interrupted while waiting for the frame registration service.";
+      return {};
+    }
+    LOG(WARNING) << "Frame registration service not available, waiting...";
   }
 
-  VLOG(3) << "Visual registration request: query={robot: " << msg.request.query_robot
-          << ", frame: " << msg.request.query
-          << "}, match={robot: " << msg.request.match_robot
-          << ", frame: " << msg.request.match;
+  VLOG(3) << "Visual registration request: query={robot: " << request->query_robot
+          << ", frame: " << request->query
+          << "}, match={robot: " << request->match_robot
+          << ", frame: " << request->match;
 
-  if (!msg.response.valid) {
-    VLOG(1) << "Visual registration failed: " << NodeSymbol(query_id).getLabel()
+  // Send the service request
+  auto result = frame_reg_client_->async_send_request(request);
+  if (rclcpp::spin_until_future_complete(node_,
+          result, std::chrono::seconds(5)) == rclcpp::FutureReturnCode::SUCCESS) {
+    // Handle response if service call succeeded
+    auto response = result.get();
+    if (!response->valid) {
+      VLOG(1) << "Visual registration failed: " << NodeSymbol(query_id).getLabel()
             << " -> " << NodeSymbol(match_id).getLabel();
+      return {};
+    }
+
+    Eigen::Quaterniond match_q_res;
+    Eigen::Vector3d match_t_res;
+    tf2::fromMsg(response->match_t_query.orientation, match_q_res);
+    // tf2::convert(response->match_t_query.orientation, match_q_res);
+    tf2::convert(response->match_t_query.position, match_t_res);
+    const Eigen::IOFormat format(3, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]");
+    VLOG(3) << "Visual registration succeded: "
+            << getPoseRepr(match_q_res, match_t_res);
+    return {true, query_id, match_id, match_t_res, match_q_res, -1};
+
+  } else {
+    LOG(ERROR) << "[Hydra LCD] Frame registration service call failed!";
     return {};
   }
 
-  Eigen::Quaterniond match_q_query;
-  Eigen::Vector3d match_t_query;
-  tf2::convert(msg.response.match_T_query.orientation, match_q_query);
-  tf2::convert(msg.response.match_T_query.position, match_t_query);
-  const Eigen::IOFormat format(3, Eigen::DontAlignCols, ", ", ", ", "", "", "[", "]");
-  VLOG(3) << "Visual registration succeded: "
-          << getPoseRepr(match_q_query, match_t_query);
-  return {true, query_id, match_id, match_t_query, match_q_query, -1};
+
+  
 }
 
 }  // namespace hydra::lcd

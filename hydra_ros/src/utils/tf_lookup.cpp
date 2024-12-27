@@ -49,24 +49,25 @@ PoseStatus lookupTransform(const std::string& target,
                            const std::string& source,
                            double wait_duration_s,
                            int verbosity) {
-  tf2_ros::Buffer buffer;
+  tf2_ros::Buffer buffer{std::make_shared<rclcpp::Clock>(RCL_ROS_TIME)};
   tf2_ros::TransformListener listener(buffer);
+  
   return lookupTransform(
       buffer, std::nullopt, target, source, std::nullopt, wait_duration_s, verbosity);
 }
 
 PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
-                           const std::optional<ros::Time>& stamp,
+                           const std::optional<rclcpp::Time>& stamp,
                            const std::string& target,
                            const std::string& source,
                            std::optional<size_t> max_tries,
                            double wait_duration_s,
                            int verbosity) {
-  ros::WallRate tf_wait_rate(1.0 / wait_duration_s);
+  rclcpp::WallRate tf_wait_rate(1.0 / wait_duration_s);
   std::string stamp_suffix;
   if (stamp) {
     std::stringstream ss;
-    ss << " @ " << stamp.value().toNSec() << " [ns]";
+    ss << " @ " << stamp.value().nanoseconds() << " [ns]";
     stamp_suffix = ss.str();
   }
 
@@ -75,24 +76,24 @@ PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
   VLOG(verbosity) << "Looking up transform " << target << "_T_" << source
                   << stamp_suffix;
 
-  const auto lookup_time = stamp.value_or(ros::Time());
+  const auto lookup_time = stamp.value_or(rclcpp::Time());
   size_t attempt_number = 0;
-  while (ros::ok()) {
-    VLOG(verbosity) << "Attempting to lookup tf @ " << lookup_time.toNSec()
+  while (rclcpp::ok()) {
+    VLOG(verbosity) << "Attempting to lookup tf @ " << lookup_time.nanoseconds()
                     << " [ns]: " << attempt_number << " / "
                     << (max_tries ? std::to_string(max_tries.value()) : "n/a");
     if (max_tries && attempt_number >= *max_tries) {
       break;
     }
 
-    if (buffer.canTransform(target, source, lookup_time, ros::Duration(0), &err_str)) {
+    if (buffer.canTransform(target, source, lookup_time, rclcpp::Duration(0, 0), &err_str)) {
       have_transform = true;
       break;
     }
 
     ++attempt_number;
     tf_wait_rate.sleep();
-    ros::spinOnce();
+    // rclcpp::spin_some();
   }
 
   if (!have_transform) {
@@ -101,7 +102,7 @@ PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
     return {false, {}, {}};
   }
 
-  geometry_msgs::TransformStamped transform;
+  geometry_msgs::msg::TransformStamped transform;
   try {
     transform = buffer.lookupTransform(target, source, lookup_time);
   } catch (const tf2::TransformException& ex) {
@@ -109,7 +110,7 @@ PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
     return {false, {}, {}};
   }
 
-  geometry_msgs::Pose curr_pose;
+  geometry_msgs::msg::Pose curr_pose;
   curr_pose.position.x = transform.transform.translation.x;
   curr_pose.position.y = transform.transform.translation.y;
   curr_pose.position.z = transform.transform.translation.z;
@@ -118,7 +119,7 @@ PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
   PoseStatus to_return;
   to_return.is_valid = true;
   tf2::convert(curr_pose.position, to_return.target_p_source);
-  tf2::convert(curr_pose.orientation, to_return.target_R_source);
+  tf2::fromMsg(curr_pose.orientation, to_return.target_R_source);
   to_return.target_R_source.normalize();
   return to_return;
 }
@@ -133,9 +134,10 @@ void declare_config(TFLookup::Config& config) {
 }
 
 TFLookup::TFLookup(const Config& config)
-    : config(config),
-      nh(""),
-      buffer(ros::Duration(config.buffer_size_s)),
+    : Node("tf_lookup"),
+      config(config),
+      buffer(this->get_clock(), 
+        rclcpp::Duration(config.buffer_size_s, 0).to_chrono<std::chrono::nanoseconds>()),
       listener(buffer) {}
 
 PoseStatus TFLookup::getBodyPose(uint64_t timestamp_ns) const {
@@ -143,8 +145,7 @@ PoseStatus TFLookup::getBodyPose(uint64_t timestamp_ns) const {
   const std::optional<size_t> max_tries =
       config.max_tries > 0 ? std::optional<size_t>(config.max_tries) : std::nullopt;
 
-  ros::Time curr_ros_time;
-  curr_ros_time.fromNSec(timestamp_ns);
+  rclcpp::Time curr_ros_time{static_cast<int64_t>(timestamp_ns)};
   return lookupTransform(buffer,
                          curr_ros_time,
                          GlobalInfo::instance().getFrames().odom,

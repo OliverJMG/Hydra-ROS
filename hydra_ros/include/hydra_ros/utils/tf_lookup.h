@@ -49,14 +49,14 @@ PoseStatus lookupTransform(const std::string& target,
                            int verbosity = 10);
 
 PoseStatus lookupTransform(const tf2_ros::Buffer& buffer,
-                           const std::optional<ros::Time>& stamp,
+                           const std::optional<rclcpp::Time>& stamp,
                            const std::string& target,
                            const std::string& source,
                            std::optional<size_t> max_tries = std::nullopt,
                            double wait_duration_s = 0.1,
                            int verbosity = 10);
 
-struct TFLookup {
+struct TFLookup : rclcpp::Node {
   struct Config {
     //! Amount of time to wait between tf lookup attempts
     double wait_duration_s = 0.1;
@@ -71,7 +71,7 @@ struct TFLookup {
   explicit TFLookup(const Config& config);
   PoseStatus getBodyPose(uint64_t timestamp_ns) const;
 
-  ros::NodeHandle nh;
+  // ros::NodeHandle nh;
   tf2_ros::Buffer buffer;
   tf2_ros::TransformListener listener;
 };

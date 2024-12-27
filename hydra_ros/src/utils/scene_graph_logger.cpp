@@ -53,9 +53,9 @@ void declare_config(SceneGraphLogger::Config& config) {
   checkCondition(!config.output_path.empty(), "output_path required");
 }
 
-SceneGraphLogger::SceneGraphLogger(const ros::NodeHandle& nh)
-    : config(config::checkValid(config::fromRos<Config>(nh))),
-      nh_(nh),
+SceneGraphLogger::SceneGraphLogger(const rclcpp::NodeOptions& options)
+    : Node("scene_graph_logger", options),
+      config(config::checkValid(config::fromRos<Config>(this->get_node_parameters_interface()))),
       curr_count_(0),
       curr_output_count_(0) {
   bool exists = std::filesystem::exists(config.output_path);
@@ -68,7 +68,7 @@ SceneGraphLogger::SceneGraphLogger(const ros::NodeHandle& nh)
     std::filesystem::create_directories(config.output_path);
   }
 
-  receiver_.reset(new DsgReceiver(nh_));
+  receiver_.reset(new DsgReceiver(*this));
 }
 
 void SceneGraphLogger::spin() {
@@ -76,9 +76,8 @@ void SceneGraphLogger::spin() {
     return;
   }
 
-  ros::WallRate r(10);
-  while (ros::ok()) {
-    ros::spinOnce();
+  rclcpp::WallRate r(10);
+  while (rclcpp::ok()) {
     if (!receiver_->updated()) {
       r.sleep();
       continue;

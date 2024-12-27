@@ -34,9 +34,10 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <tf2/buffer_core.h>
-
+#include <rosbag2_transport/reader_writer_factory.hpp>
 #include <Eigen/Geometry>
 #include <filesystem>
+
 
 namespace rosbag {
 class Bag;
@@ -65,7 +66,7 @@ class PoseCache {
 
   explicit PoseCache(const Config& config);
 
-  explicit PoseCache(const rosbag::Bag& bag, bool static_only = false);
+  explicit PoseCache(const rosbag2_storage::StorageOptions& options, bool static_only = false);
 
   PoseResult lookupPose(uint64_t timestamp_ns,
                         const std::string& to_frame,

@@ -62,9 +62,9 @@ ColorManager::ColorManager(const rclcpp::Node::SharedPtr node, spark_dsg::LayerI
   // NOTE(nathan) this is ugly but probably the easiest way to parse the current
   // settings from ros
   std::stringstream ss;
-  ss << config::internal::rosToYaml(node_);
+  ss << config::internal::rosToYaml(node_->get_node_parameters_interface());
   curr_contents_ = ss.str();
-  sub_ = node_->create_subscription<std_msgs::msg::String>("", 1, 
+  sub_ = node_->create_subscription<std_msgs::msg::String>("~/color_settings", 1, 
           std::bind(&ColorManager::callback, this, std::placeholders::_1));
 }
 
@@ -113,9 +113,9 @@ LabelManager::LabelManager(const rclcpp::Node::SharedPtr node)
   // NOTE(nathan) this is ugly but probably the easiest way to parse the current
   // settings from ros
   std::stringstream ss;
-  ss << config::internal::rosToYaml(node_);
+  ss << config::internal::rosToYaml(node_->get_node_parameters_interface());
   curr_contents_ = ss.str();
-  sub_ = node_->create_subscription<std_msgs::msg::String>("", 1, 
+  sub_ = node_->create_subscription<std_msgs::msg::String>("~/label_settings", 1, 
           std::bind(&LabelManager::callback, this, std::placeholders::_1));
 }
 
@@ -233,7 +233,7 @@ const VisualizerConfig& ConfigManager::getVisualizerConfig() const {
   if (!visualizer_config_) {
     visualizer_config_ =
         std::make_shared<ConfigWrapper<VisualizerConfig>>(
-          "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/visualizer_defaults.yaml",
+          "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/visualizer_config.yaml",
           "");
   }
 

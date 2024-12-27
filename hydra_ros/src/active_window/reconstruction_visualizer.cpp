@@ -34,7 +34,6 @@
  * -------------------------------------------------------------------------- */
 #include "hydra_ros/active_window/reconstruction_visualizer.h"
 
-#include <config_utilities/config.h>
 #include <config_utilities/parsing/ros2.h>
 #include <config_utilities/printing.h>
 #include <hydra/common/global_info.h>
@@ -60,7 +59,7 @@ bool isVoxelObserved(const ReconstructionVisualizer::Config& config,
   return voxel.weight >= config.min_observation_weight;
 }
 
-std_msgs::ColorRGBA colorVoxelByDist(const ReconstructionVisualizer::Config& config,
+std_msgs::msg::ColorRGBA colorVoxelByDist(const ReconstructionVisualizer::Config& config,
                                      double truncation_distance,
                                      const visualizer::RangeColormap& cmap,
                                      const TsdfVoxel& voxel) {
@@ -68,7 +67,7 @@ std_msgs::ColorRGBA colorVoxelByDist(const ReconstructionVisualizer::Config& con
   return visualizer::makeColorMsg(color, config.marker_alpha);
 }
 
-std_msgs::ColorRGBA colorVoxelByWeight(const ReconstructionVisualizer::Config& config,
+std_msgs::msg::ColorRGBA colorVoxelByWeight(const ReconstructionVisualizer::Config& config,
                                        const visualizer::RangeColormap& cmap,
                                        const TsdfVoxel& voxel) {
   // TODO(nathan) consider exponential
@@ -102,7 +101,9 @@ void declare_config(ReconstructionVisualizer::Config& config) {
   field(config.mesh_coloring, "mesh_coloring");
 }
 
-ImagePublisherGroup::ImagePublisherGroup(ros::NodeHandle& nh) : transport_(nh) {}
+ImagePublisherGroup::ImagePublisherGroup(const std::string& name, const std::string& ns) {
+  node_ = std::make_shared<rclcpp::Node>(name, ns);
+}
 
 bool ImagePublisherGroup::shouldPublish(const image_transport::Publisher& pub) const {
   return pub.getNumSubscribers() > 0;
@@ -110,21 +111,21 @@ bool ImagePublisherGroup::shouldPublish(const image_transport::Publisher& pub) c
 
 image_transport::Publisher ImagePublisherGroup::makePublisher(
     const std::string& topic) const {
-  return transport_.advertise(topic, 1);
+  return image_transport::create_publisher(node_.get(), topic, rmw_qos_profile_default);
 }
 
 void ImagePublisherGroup::publishMsg(const image_transport::Publisher& pub,
-                                     const sensor_msgs::Image::Ptr& img) const {
-  pub.publish(img);
+                                     sensor_msgs::msg::Image::SharedPtr img) const {
+  pub.publish(*img);
 }
 
 ReconstructionVisualizer::ReconstructionVisualizer(const Config& config)
     : config(config),
-      nh_(config.ns),
-      pubs_(nh_),
-      active_mesh_pub_(nh_.advertise<kimera_pgmo_msgs::KimeraPgmoMesh>("mesh", 1)),
-      image_pubs_(nh_),
-      cloud_pubs_(nh_),
+      node_(rclcpp::Node::make_shared(config.ns, "hydra_ros_node")),
+      pubs_(node_),
+      active_mesh_pub_(node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("~/mesh", 1)),
+      image_pubs_("img_pub", "hydra_ros_node/reconstruction"),
+      cloud_pubs_("cloud_pub", "hydra_ros_node/reconstruction"),
       colormap_(config.colormap),
       mesh_coloring_(config.mesh_coloring.create()) {}
 
@@ -141,9 +142,9 @@ void ReconstructionVisualizer::call(uint64_t timestamp_ns,
   const auto& tsdf = map.getTsdfLayer();
   const auto pose = output.world_T_body();
 
-  std_msgs::Header header;
+  std_msgs::msg::Header header;
   header.frame_id = GlobalInfo::instance().getFrames().map;
-  header.stamp.fromNSec(timestamp_ns);
+  header.stamp = rclcpp::Time(timestamp_ns);
 
   const RangeColormap cmap(RangeColormap::Config{});
   const VoxelSliceConfig slice{config.slice_height, config.use_relative_height};
@@ -158,18 +159,18 @@ void ReconstructionVisualizer::call(uint64_t timestamp_ns,
     return colorVoxelByWeight(config, colormap_, voxel);
   };
 
-  pubs_.publish("tsdf_viz", header, [&]() -> Marker {
+  pubs_.publish("/hydra_ros_node/reconstruction/tsdf_viz", header, [&]() -> Marker {
     return drawVoxelSlice<TsdfVoxel>(
         slice, header, tsdf, pose, filter, distance_colormap, "distances");
   });
 
-  pubs_.publish("tsdf_weight_viz", header, [&]() -> Marker {
+  pubs_.publish("/hydra_ros_node/reconstruction/tsdf_weight_viz", header, [&]() -> Marker {
     return drawVoxelSlice<TsdfVoxel>(
         slice, header, tsdf, pose, filter, weight_colormap, "weights");
   });
 
   ActiveBlockColoring block_cmap(config.tsdf_block_color);
-  pubs_.publish("tsdf_block_viz", header, [&]() -> Marker {
+  pubs_.publish("/hydra_ros_node/reconstruction/tsdf_block_viz", header, [&]() -> Marker {
     return drawSpatialGrid(tsdf,
                            config.tsdf_block_scale,
                            "blocks",
@@ -180,30 +181,30 @@ void ReconstructionVisualizer::call(uint64_t timestamp_ns,
   publishMesh(output);
 
   if (output.sensor_data) {
-    std_msgs::Header header;
-    header.stamp.fromNSec(output.timestamp_ns);
+    std_msgs::msg::Header header;
+    header.stamp = rclcpp::Time(output.timestamp_ns);
     header.frame_id = GlobalInfo::instance().getFrames().map;
 
     const auto sensor_name = output.sensor_data->getSensor().name;
-    image_pubs_.publish(sensor_name + "/labels", [&]() {
+    image_pubs_.publish("/hydra_ros_node/reconstruction/" + sensor_name + "/labels", [&]() {
       return makeImage(header, *output.sensor_data, [this](uint32_t label) {
         return label_colormap_(label);
       });
     });
-    cloud_pubs_.publish(sensor_name + "/pointcloud", [&]() {
+    cloud_pubs_.publish("/hydra_ros_node/reconstruction/" + sensor_name + "/pointcloud", [&]() {
       return makeCloud(header, *output.sensor_data, config.filter_points_by_range);
     });
   }
 }
 
 void ReconstructionVisualizer::publishMesh(const ActiveWindowOutput& out) const {
-  std_msgs::Header header;
-  header.stamp.fromNSec(out.timestamp_ns);
+  std_msgs::msg::Header header;
+  header.stamp = rclcpp::Time(out.timestamp_ns);
   header.frame_id = GlobalInfo::instance().getFrames().map;
 
   const auto& mesh = out.map().getMeshLayer();
   ActiveBlockColoring block_cmap(config.mesh_block_color);
-  pubs_.publish("mesh_block_viz", header, [&]() -> Marker {
+  pubs_.publish("/hydra_ros_node/reconstruction/mesh_block_viz", header, [&]() -> Marker {
     return drawSpatialGrid(mesh,
                            config.mesh_block_scale,
                            "mesh_blocks",
@@ -211,7 +212,7 @@ void ReconstructionVisualizer::publishMesh(const ActiveWindowOutput& out) const 
                            block_cmap.getCallback<MeshBlock>());
   });
 
-  if (active_mesh_pub_.getNumSubscribers() == 0) {
+  if (active_mesh_pub_->get_subscription_count() == 0) {
     return;
   }
 
@@ -229,7 +230,7 @@ void ReconstructionVisualizer::publishMesh(const ActiveWindowOutput& out) const 
 
   auto msg = visualizer::makeMeshMsg(
       header, *combined_mesh, "active_window_mesh", mesh_coloring_);
-  active_mesh_pub_.publish(msg);
+  active_mesh_pub_->publish(msg);
 }
 
 }  // namespace hydra

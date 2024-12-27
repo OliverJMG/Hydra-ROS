@@ -35,7 +35,7 @@
 #include <config_utilities/config_utilities.h>
 #include <config_utilities/formatting/asl.h>
 #include <config_utilities/logging/log_to_glog.h>
-#include <config_utilities/parsing/ros.h>
+#include <config_utilities/parsing/ros2.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <hydra/reconstruction/mesh_integrator.h>

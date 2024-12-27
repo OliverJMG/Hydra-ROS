@@ -11,7 +11,7 @@
 #include <spark_dsg/node_attributes.h>
 #include <spark_dsg/node_symbol.h>
 
-#include "hydra_ros_build_config.h"
+// #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
 #include <semantic_inference_msgs/msg/feature_vector_stamped.hpp>
@@ -113,7 +113,7 @@ struct FeatureScoreColor::FeatureTrampoline {};
 
 FeatureScoreColor::FeatureScoreColor(const Config& config)
     : config(config),
-      nh_(config.ns),
+      // nh_(config.ns),
       has_change_(false),
       has_feature_(false),
       metric_(config.metric.create()) {

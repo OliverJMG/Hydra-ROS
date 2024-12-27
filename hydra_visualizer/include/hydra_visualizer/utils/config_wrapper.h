@@ -38,6 +38,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <config_utilities/parsing/yaml.h>
+#include <config_utilities/parsing/ros2.h>
 #include "hydra_visualizer/utils/configs.h"
 
 namespace hydra::visualizer {
@@ -52,6 +53,16 @@ class ConfigWrapper {
   ConfigWrapper(const std::string& path, const std::string& ns = "")
       : changed_(true) {
     config_ = config::fromYamlFile<Config>(path, ns);
+  }
+
+  ConfigWrapper(rclcpp::node_interfaces::NodeParametersInterface::SharedPtr iface, 
+      const std::string& ns = "")
+      : changed_(true) {
+    config_ = config::fromRos<Config>(iface, ns);
+  }
+
+  ConfigWrapper(const Config& cfg) : changed_(true) {
+    config_ = cfg;
   }
 
   bool hasChange() const { return changed_; }

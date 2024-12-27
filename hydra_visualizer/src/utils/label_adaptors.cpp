@@ -35,7 +35,7 @@
 
 #include "hydra_visualizer/utils/label_adaptors.h"
 
-#include <config_utilities/factory.h>
+
 #include <spark_dsg/node_attributes.h>
 #include <spark_dsg/node_symbol.h>
 
@@ -43,18 +43,18 @@ namespace hydra::visualizer {
 
 using namespace spark_dsg;
 
-namespace {
+// namespace {
 
-static const auto id_reg =
-    config::RegistrationWithConfig<GraphLabelAdaptor,
-                                   IdLabelAdaptor,
-                                   IdLabelAdaptor::Config>("IdLabelAdaptor");
+// static const auto id_reg =
+//     config::RegistrationWithConfig<GraphLabelAdaptor,
+//                                    IdLabelAdaptor,
+//                                    IdLabelAdaptor::Config>("IdLabelAdaptor");
 
-static const auto name_reg =
-    config::Registration<GraphLabelAdaptor, NameLabelAdaptor, NameLabelAdaptor::Config>(
-        "NameLabelAdaptor");
+// static const auto name_reg =
+//     config::Registration<GraphLabelAdaptor, NameLabelAdaptor, NameLabelAdaptor::Config>(
+//         "NameLabelAdaptor");
 
-}  // namespace
+// }  // namespace
 
 void declare_config(IdLabelAdaptor::Config&) {}
 

@@ -52,7 +52,7 @@ class LazyPublisherGroup {
   virtual ~LazyPublisherGroup() = default;
 
   template <typename Callback>
-  void publish(const std::string& topic, const Callback& callback) const {
+  void publish(const std::string& topic, const Callback callback) const {
     const auto derived = static_cast<const Derived*>(this);
     auto iter = pubs_.find(topic);
     if (iter == pubs_.end()) {
@@ -79,7 +79,7 @@ struct RosPublisherGroup;
 
 template <typename T>
 struct publisher_type_trait<RosPublisherGroup<T>> {
-  using value = ros::Publisher;
+  using value = typename rclcpp::Publisher<T>::SharedPtr;
 };
 
 template <typename T>
@@ -87,34 +87,50 @@ struct RosPublisherGroup : LazyPublisherGroup<RosPublisherGroup<T>> {
  public:
   using Base = LazyPublisherGroup<RosPublisherGroup<T>>;
 
-  explicit RosPublisherGroup(const ros::NodeHandle& nh,
-                             size_t queue_size = 1,
-                             bool latch = false)
-      : queue_size(queue_size), latch(latch), nh_(nh) {}
-
-  ros::Publisher makePublisher(const std::string& topic) const {
-    return nh_.advertise<T>(topic, queue_size, latch);
+  explicit RosPublisherGroup(const std::string& name, const std::string& ns) {
+    node_ = std::make_shared<rclcpp::Node>(name, ns);
+    param_cb_ = node_->add_post_set_parameters_callback(std::bind(
+            &RosPublisherGroup<T>::on_param_change, this, std::placeholders::_1));
+    node_->declare_parameter<int>("queue_size", 1);
+    node_->declare_parameter<bool>("latch", false);
   }
 
-  bool shouldPublish(const ros::Publisher& pub) const {
-    return pub.getNumSubscribers() > 0;
+  typename rclcpp::Publisher<T>::SharedPtr makePublisher(const std::string& topic) const {
+    rclcpp::QoS qos = rclcpp::QoS(queue_size);
+    if(latch) qos = qos.transient_local();
+    return node_->create_publisher<T>(topic, qos);
   }
 
-  void publishMsg(const ros::Publisher& pub, const T& msg) const { pub.publish(msg); }
-
-  void publishMsg(const ros::Publisher& pub, const typename T::Ptr& msg) const {
-    pub.publish(msg);
+  bool shouldPublish(typename rclcpp::Publisher<T>::SharedPtr pub) const {
+    return pub->get_subscription_count() > 0;
   }
 
-  void publishMsg(const ros::Publisher& pub, const typename T::ConstPtr& msg) const {
-    pub.publish(msg);
+  void publishMsg(typename rclcpp::Publisher<T>::SharedPtr& pub, T& msg) const { 
+    pub->publish(msg); 
   }
 
-  const size_t queue_size;
-  const bool latch;
+  void publishMsg(typename rclcpp::Publisher<T>::SharedPtr& pub, typename T::UniquePtr msg) const {
+    pub->publish(std::move(msg));
+  }
+
+  size_t queue_size;
+  bool latch;
 
  private:
-  mutable ros::NodeHandle nh_;
+
+  void on_param_change(const std::vector<rclcpp::Parameter> & parameters) { 
+    for(const auto & param:parameters) { 
+      // Update internal class parameter values
+      if (param.get_name() == "queue_size") {
+        queue_size = param.as_int();
+      } else if (param.get_name() == "latch") {
+        latch = param.as_bool();
+      }
+    } 
+  }
+
+  mutable rclcpp::Node::SharedPtr node_;
+  rclcpp::node_interfaces::PostSetParametersCallbackHandle::SharedPtr param_cb_;
 };
 
 }  // namespace hydra

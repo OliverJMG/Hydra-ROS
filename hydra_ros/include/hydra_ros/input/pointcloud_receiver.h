@@ -52,9 +52,9 @@ class PointcloudReceiver : public RosDataReceiver {
   bool initImpl() override;
 
  private:
-  void callback(const sensor_msgs::PointCloud2& cloud);
+  void callback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
 
-  ros::Subscriber sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<DataReceiver,

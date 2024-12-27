@@ -40,11 +40,11 @@
 namespace hydra {
 namespace {
 
-sensor_msgs::PointField makeField(const std::string& name,
+sensor_msgs::msg::PointField makeField(const std::string& name,
                                   uint32_t offset,
                                   uint8_t datatype,
                                   uint32_t count = 1) {
-  sensor_msgs::PointField field;
+  sensor_msgs::msg::PointField field;
   field.name = name;
   field.offset = offset;
   field.datatype = datatype;
@@ -56,7 +56,7 @@ sensor_msgs::PointField makeField(const std::string& name,
 
 using LabelColormap = std::function<spark_dsg::Color(uint32_t)>;
 
-sensor_msgs::Image::Ptr makeImage(const std_msgs::Header& header,
+sensor_msgs::msg::Image::SharedPtr makeImage(const std_msgs::msg::Header& header,
                                   const InputData& sensor_data,
                                   const LabelColormap& colormap) {
   const auto& labels = sensor_data.label_image;
@@ -79,7 +79,7 @@ sensor_msgs::Image::Ptr makeImage(const std_msgs::Header& header,
 
 // TODO(nathan) pcl_ros would avoid this but it causes compile issues (and would also
 // require going to pcl pointcloud as an intermediate type)
-sensor_msgs::PointCloud2::Ptr makeCloud(const std_msgs::Header& header,
+sensor_msgs::msg::PointCloud2::UniquePtr makeCloud(const std_msgs::msg::Header& header,
                                         const InputData& sensor_data,
                                         bool filter_by_range) {
   const auto& sensor = sensor_data.getSensor();
@@ -90,25 +90,25 @@ sensor_msgs::PointCloud2::Ptr makeCloud(const std_msgs::Header& header,
   const auto has_color = !colors.empty();
   const auto has_labels = !labels.empty();
 
-  sensor_msgs::PointCloud2::Ptr cloud(new sensor_msgs::PointCloud2());
+  sensor_msgs::msg::PointCloud2::UniquePtr cloud(new sensor_msgs::msg::PointCloud2());
   cloud->header = header;
   cloud->height = points.rows;
   cloud->width = points.cols;
 
   auto& step = cloud->point_step;
-  cloud->fields.push_back(makeField("x", step, sensor_msgs::PointField::FLOAT32));
+  cloud->fields.push_back(makeField("x", step, sensor_msgs::msg::PointField::FLOAT32));
   step += sizeof(float);
-  cloud->fields.push_back(makeField("y", step, sensor_msgs::PointField::FLOAT32));
+  cloud->fields.push_back(makeField("y", step, sensor_msgs::msg::PointField::FLOAT32));
   step += sizeof(float);
-  cloud->fields.push_back(makeField("z", step, sensor_msgs::PointField::FLOAT32));
+  cloud->fields.push_back(makeField("z", step, sensor_msgs::msg::PointField::FLOAT32));
   step += sizeof(float);
   if (has_color) {
-    cloud->fields.push_back(makeField("rgba", step, sensor_msgs::PointField::UINT32));
+    cloud->fields.push_back(makeField("rgba", step, sensor_msgs::msg::PointField::UINT32));
     step += sizeof(uint32_t);
   }
 
   if (has_labels) {
-    cloud->fields.push_back(makeField("label", step, sensor_msgs::PointField::UINT32));
+    cloud->fields.push_back(makeField("label", step, sensor_msgs::msg::PointField::UINT32));
     step += sizeof(uint32_t);
   }
 

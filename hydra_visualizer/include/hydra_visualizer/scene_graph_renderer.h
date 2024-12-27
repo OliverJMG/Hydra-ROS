@@ -51,7 +51,7 @@ using visualization_msgs::msg::MarkerArray;
 class SceneGraphRenderer {
  public:
   using Ptr = std::shared_ptr<SceneGraphRenderer>;
-  explicit SceneGraphRenderer(rclcpp::Node::SharedPtr nh);
+  explicit SceneGraphRenderer(rclcpp::Node::SharedPtr node);
 
   virtual ~SceneGraphRenderer() = default;
 
@@ -76,7 +76,7 @@ class SceneGraphRenderer {
                                 MarkerArray& msg);
 
  protected:
-  rclcpp::Node::SharedPtr nh_;
+  rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<MarkerArray>::SharedPtr pub_;
   MarkerTracker tracker_;
 };

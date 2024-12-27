@@ -34,20 +34,25 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/backend/backend_module.h>
+#include <rclcpp/rclcpp.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <nav_interfaces/msg/pose_graph.hpp>
 
 #include "hydra_ros/utils/dsg_streaming_interface.h"
 
 namespace hydra {
 
-class RosBackendPublisher : public BackendModule::Sink {
+class RosBackendPublisher : public rclcpp::Node, public BackendModule::Sink {
  public:
   struct Config {
     bool publish_mesh = false;
-  } const config;
+  } config;
 
-  explicit RosBackendPublisher(const ros::NodeHandle& nh);
+  explicit RosBackendPublisher(const rclcpp::NodeOptions& options);
 
   virtual ~RosBackendPublisher() = default;
+
+  void configure();
 
   void call(uint64_t timestamp_ns,
             const DynamicSceneGraph& graph,
@@ -63,10 +68,9 @@ class RosBackendPublisher : public BackendModule::Sink {
                                           size_t timestamp_ns) const;
 
  protected:
-  ros::NodeHandle nh_;
-  ros::Publisher mesh_mesh_edges_pub_;
-  ros::Publisher pose_mesh_edges_pub_;
-  ros::Publisher pose_graph_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mesh_mesh_edges_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_mesh_edges_pub_;
+  rclcpp::Publisher<nav_interfaces::msg::PoseGraph>::SharedPtr pose_graph_pub_;
   std::unique_ptr<DsgSender> dsg_sender_;
 };
 

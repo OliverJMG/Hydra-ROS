@@ -75,8 +75,8 @@ class BagReader {
   void handleImages(const BagConfig& bag_config,
                     const Sensor::ConstPtr& sensor,
                     const PoseCache& cache,
-                    const sensor_msgs::Image::ConstPtr& color_msg,
-                    const sensor_msgs::Image::ConstPtr& depth_msg);
+                    sensor_msgs::msg::Image::ConstSharedPtr color_msg,
+                    sensor_msgs::msg::Image::ConstSharedPtr depth_msg);
 
  protected:
   void readBag(const BagConfig& config);

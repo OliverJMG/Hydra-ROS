@@ -36,13 +36,9 @@
 #include <hydra/input/camera.h>
 #include <hydra/input/sensor.h>
 
-namespace ros {
-class NodeHandle;
-}
-
-namespace rosbag {
-class Bag;
-}
+// namespace rosbag {
+// class Bag;
+// }
 
 namespace hydra {
 
@@ -111,8 +107,8 @@ namespace input {
 config::VirtualConfig<Sensor> loadSensor(const config::VirtualConfig<Sensor>& sensor,
                                          const std::string& name);
 
-config::VirtualConfig<Sensor> loadSensor(const rosbag::Bag& bag,
-                                         const config::VirtualConfig<Sensor>& sensor);
+// config::VirtualConfig<Sensor> loadSensor(const rosbag::Bag& bag,
+//                                          const config::VirtualConfig<Sensor>& sensor);
 
 }  // namespace input
 

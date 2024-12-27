@@ -40,16 +40,15 @@
 
 namespace hydra {
 
-struct SceneGraphLogger {
+struct SceneGraphLogger : public rclcpp::Node {
   struct Config {
     size_t output_every_num = 0;
     std::filesystem::path output_path;
   } const config;
 
-  explicit SceneGraphLogger(const ros::NodeHandle& nh);
+  explicit SceneGraphLogger(const rclcpp::NodeOptions& options);
   void spin();
 
-  ros::NodeHandle nh_;
   size_t curr_count_;
   size_t curr_output_count_;
   std::unique_ptr<DsgReceiver> receiver_;

@@ -112,8 +112,8 @@ KhronosObjectPlugin::KhronosObjectPlugin(const Config& config,
                                          const std::string& name)
     : VisualizerPlugin(node, name), config(config::checkValid(config)), 
       tf_broadcaster_(node) {
-  dynamic_pub_ = node_->create_publisher<MarkerArray>("dynamic_objects", config.queue_size);
-  static_pub_ = node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("static_objects",
+  dynamic_pub_ = node_->create_publisher<MarkerArray>("~/dynamic_objects", config.queue_size);
+  static_pub_ = node_->create_publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>("~/static_objects",
                                                                 config.queue_size);
 }
 

@@ -64,13 +64,13 @@ void MarkerGroupPub::publish(const std::string& name,
     return;  // avoid doing computation if we don't need to publish
   }
 
-  MarkerArray msg;
-  iter->second.tracker.add(func(), msg);
-  for (auto& marker : msg.markers) {
+  MarkerArray::UniquePtr msg = std::make_unique<MarkerArray>();
+  iter->second.tracker.add(func(), *msg);
+  for (auto& marker : msg->markers) {
     marker.header = header;
   }
-  iter->second.tracker.clearPrevious(header, msg);
-  iter->second.pub->publish(msg);
+  iter->second.tracker.clearPrevious(header, *msg);
+  iter->second.pub->publish(std::move(msg));
 }
 
 }  // namespace hydra

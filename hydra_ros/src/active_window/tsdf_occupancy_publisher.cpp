@@ -62,7 +62,7 @@ void declare_config(TsdfOccupancyPublisher::Config& config) {
 }
 
 TsdfOccupancyPublisher::TsdfOccupancyPublisher(const Config& config)
-    : OccupancyPublisher(config, ros::NodeHandle(config.ns)),
+    : OccupancyPublisher(config, "tsdf", "hydra_ros_node"),
       config(config::checkValid(config)) {}
 
 std::string TsdfOccupancyPublisher::printInfo() const {

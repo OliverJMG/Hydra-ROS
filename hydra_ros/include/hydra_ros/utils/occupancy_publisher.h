@@ -73,14 +73,17 @@ struct OccupancyPublisherConfig {
 void declare_config(OccupancyPublisherConfig& config);
 
 template <typename BlockT>
-class OccupancyPublisher {
+class OccupancyPublisher : public rclcpp::Node {
  public:
   using LayerT = spatial_hash::VoxelLayer<BlockT>;
 
-  OccupancyPublisher(const OccupancyPublisherConfig& config, const ros::NodeHandle& nh)
-      : config(config),
-        nh_(nh),
-        pub_(nh_.advertise<nav_msgs::OccupancyGrid>("occupancy", 1, true)) {}
+  OccupancyPublisher(const OccupancyPublisherConfig& config, 
+                      const std::string& name, const std::string& ns)
+      : Node(name, ns),
+        config(config) {
+    auto latch_qos = rclcpp::QoS{1}.transient_local();
+    pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("~/occupancy", latch_qos);
+  }
 
   virtual ~OccupancyPublisher() = default;
 
@@ -92,8 +95,7 @@ class OccupancyPublisher {
                const LayerT& layer) const;
 
  private:
-  ros::NodeHandle nh_;
-  ros::Publisher pub_;
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pub_;
   mutable typename LayerT::Ptr layer_;
 };
 
@@ -123,7 +125,7 @@ template <typename BlockT>
 void initGrid(const spatial_hash::VoxelLayer<BlockT>& layer,
               const Bounds& bounds,
               double height,
-              nav_msgs::OccupancyGrid& msg) {
+              nav_msgs::msg::OccupancyGrid& msg) {
   msg.info.resolution = layer.voxel_size;
   msg.info.width = std::ceil(bounds.dims.x());
   msg.info.height = std::ceil(bounds.dims.y());
@@ -140,7 +142,7 @@ void fillOccupancySlice(const OccupancyPublisherConfig& config,
                         const Eigen::Isometry3d& world_T_sensor,
                         const Bounds& bounds,
                         double height,
-                        nav_msgs::OccupancyGrid& msg) {
+                        nav_msgs::msg::OccupancyGrid& msg) {
   const spatial_hash::Point slice_pos(0, 0, height);
   const auto slice_key = layer.getVoxelKey(slice_pos);
   auto bbox = config.add_robot_footprint
@@ -193,7 +195,7 @@ template <typename BlockT>
 void fillOccupancy(const OccupancyPublisherConfig& config,
                    const spatial_hash::VoxelLayer<BlockT>& layer,
                    const Eigen::Isometry3d& world_T_sensor,
-                   nav_msgs::OccupancyGrid& msg) {
+                   nav_msgs::msg::OccupancyGrid& msg) {
   const auto bounds = getLayerBounds(layer);
   auto height = config.slice_height;
   if (config.use_relative_height) {
@@ -254,18 +256,18 @@ void OccupancyPublisher<T>::publish(uint64_t timestamp_ns,
     collate(layer, *layer_, config.min_observation_weight);
   }
 
-  if (pub_.getNumSubscribers() == 0) {
+  if (pub_->get_subscription_count() == 0) {
     return;
   }
 
-  nav_msgs::OccupancyGrid msg;
-  msg.header.frame_id = GlobalInfo::instance().getFrames().map;
-  msg.header.stamp.fromNSec(timestamp_ns);
-  msg.info.map_load_time = msg.header.stamp;
+  auto msg = std::make_unique<nav_msgs::msg::OccupancyGrid>();
+  msg->header.frame_id = GlobalInfo::instance().getFrames().map;
+  msg->header.stamp = rclcpp::Time(timestamp_ns);
+  msg->info.map_load_time = msg->header.stamp;
 
   const auto& layer_to_use = config.collate ? *layer_ : layer;
-  fillOccupancy(config, layer_to_use, world_T_sensor, msg);
-  pub_.publish(msg);
+  fillOccupancy(config, layer_to_use, world_T_sensor, *msg);
+  pub_->publish(std::move(msg));
 }
 
 }  // namespace hydra

@@ -5,7 +5,7 @@
 #include <hydra/openset/openset_types.h>
 #include <rclcpp/rclcpp.hpp>
 
-#include "hydra_ros_build_config.h"
+// #include "hydra_ros_build_config.h"
 
 #if defined(HYDRA_USE_SEMANTIC_INFERENCE) && HYDRA_USE_SEMANTIC_INFERENCE
 #include <semantic_inference_msgs/msg/encode_feature.hpp>
@@ -19,10 +19,10 @@ struct MessageWaitFunctor {
   void callback(const T& msg) { msg_ = msg; }
 
   std::optional<T> wait() {
-    ros::WallRate r(10.0);
-    while (ros::ok() && !msg_) {
+    rclcpp::WallRate r(10.0);
+    while (rclcpp::ok() && !msg_) {
       r.sleep();
-      ros::spinOnce();
+      // ros::spinOnce();
     }
 
     return msg_;

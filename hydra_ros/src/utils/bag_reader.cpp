@@ -46,6 +46,7 @@
 #include <hydra/input/input_packet.h>
 #include <hydra/input/input_conversion.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <rosbag2_transport/reader_writer_factory.hpp>
 // #include <rosbag/bag.h>
 // #include <rosbag/view.h>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -55,7 +56,7 @@
 
 namespace hydra {
 
-using sensor_msgs::Image;
+using sensor_msgs::msg::Image;
 using Policy = message_filters::sync_policies::ApproximateTime<Image, Image>;
 using TimeSync = message_filters::Synchronizer<Policy>;
 
@@ -75,16 +76,22 @@ void declare_config(BagConfig& config) {
   check<Path::Exists>(config.bag_path, "bag_path");
 }
 
-sensor_msgs::Image::ConstPtr getImageMessage(const rosbag::MessageInstance& m) {
-  const auto raw = m.instantiate<sensor_msgs::Image>();
+Image::ConstSharedPtr getImageMessage(rosbag2_storage::SerializedBagMessageSharedPtr m) {
+  rclcpp::SerializedMessage serialized_msg(*m->serialized_data);
+
+  rclcpp::Serialization<sensor_msgs::msg::Image> raw_serialization;
+  auto raw = std::make_shared<sensor_msgs::msg::Image>();
+  raw_serialization.deserialize_message(&serialized_msg, raw.get());
   if (raw) {
     // no need to do anything special with normal image
     return raw;
   }
 
-  auto msg = m.instantiate<sensor_msgs::CompressedImage>();
+  rclcpp::Serialization<sensor_msgs::msg::CompressedImage> serialization;
+  auto msg = std::make_shared<sensor_msgs::msg::CompressedImage>();
+  serialization.deserialize_message(&serialized_msg, msg.get());
   if (!msg) {
-    LOG(ERROR) << "Unable to parse image from '" << m.getTopic() << "'";
+    LOG(ERROR) << "Unable to parse image from '" << m->topic_name << "'";
     return nullptr;
   }
 
@@ -113,8 +120,8 @@ struct Trampoline {
   const PoseCache* cache;
   Sensor::ConstPtr sensor;
 
-  void call(const sensor_msgs::Image::ConstPtr& msg1,
-            const sensor_msgs::Image::ConstPtr& msg2) {
+  void call(sensor_msgs::msg::Image::ConstSharedPtr msg1,
+            sensor_msgs::msg::Image::ConstSharedPtr msg2) {
     reader->handleImages(config, sensor, *cache, msg1, msg2);
   }
 };
@@ -123,8 +130,8 @@ void BagReader::readBag(const BagConfig& bag_config) {
   LOG(INFO) << "Reading bag from config: " << std::endl << config::toString(bag_config);
   std::vector<std::string> topics{bag_config.color_topic, bag_config.depth_topic};
 
-  rosbag::Bag bag;
-  bag.open(bag_config.bag_path, rosbag::bagmode::Read);
+  rosbag2_storage::StorageOptions storage_options;
+  storage_options.uri = bag_config.bag_path;
 
   const Sensor::ConstPtr sensor = bag_config.sensor.create();
   if (!sensor) {
@@ -132,25 +139,36 @@ void BagReader::readBag(const BagConfig& bag_config) {
     return;
   }
 
-  PoseCache cache(bag);
+  PoseCache cache(storage_options);
   Trampoline trampoline{bag_config, this, &cache, sensor};
 
   TimeSync sync(Policy(10));
-  sync.registerCallback(&Trampoline::call, &trampoline);
+  sync.registerCallback(std::bind(&Trampoline::call, &trampoline,
+          std::placeholders::_1, std::placeholders::_2));
 
-  ros::Time start;
+  rclcpp::Time start;
   bool have_start = false;
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-  for (const auto& m : view) {
+  
+  auto reader = rosbag2_transport::ReaderWriterFactory::make_reader(storage_options);
+  reader->open(storage_options);
+
+  rosbag2_storage::StorageFilter filter;
+  filter.topics = topics;
+  reader->set_filter(filter);
+
+  while (reader->has_next()) {
+    rosbag2_storage::SerializedBagMessageSharedPtr msg = reader->read_next();
+    rclcpp::Time msg_time{msg->send_timestamp};
+
     if (!have_start) {
-      start = m.getTime();
+      start = msg_time;
       if (bag_config.start >= 0.0) {
-        start += ros::Duration(bag_config.start);
+        start += rclcpp::Duration::from_seconds(bag_config.start);
       }
       have_start = true;
     }
 
-    const auto diff_s = (m.getTime() - start).toSec();
+    const auto diff_s = (msg_time - start).seconds();
     if (diff_s < 0.0) {
       VLOG(2) << "Skipping message " << std::abs(diff_s) << " [s] before start";
       continue;
@@ -161,37 +179,38 @@ void BagReader::readBag(const BagConfig& bag_config) {
       return;
     }
 
-    const auto topic = m.getTopic();
-    auto msg = getImageMessage(m);
-    if (!msg) {
+    const auto topic = msg->topic_name;
+    
+    auto img_msg = getImageMessage(msg);
+    if (!img_msg) {
       continue;
     }
 
     if (topic == bag_config.color_topic) {
       VLOG(10) << "new " << bag_config.color_topic << " @ "
-               << msg->header.stamp.toNSec();
-      sync.add<0>(ros::MessageEvent<Image>(msg, m.getTime()));
+               << msg_time.nanoseconds();
+      sync.add<0>(message_filters::MessageEvent<Image>(img_msg, msg_time));
     } else {
       VLOG(10) << "new " << bag_config.depth_topic << " @ "
-               << msg->header.stamp.toNSec();
-      sync.add<1>(ros::MessageEvent<Image>(msg, m.getTime()));
+               << msg_time.nanoseconds();
+      sync.add<1>(message_filters::MessageEvent<Image>(img_msg, msg_time));
     }
   }
 
-  bag.close();
+  reader->close();
 }
 
 void BagReader::handleImages(const BagConfig& bag_config,
                              const Sensor::ConstPtr& sensor,
                              const PoseCache& cache,
-                             const sensor_msgs::Image::ConstPtr& color_msg,
-                             const sensor_msgs::Image::ConstPtr& depth_msg) {
+                             sensor_msgs::msg::Image::ConstSharedPtr color_msg,
+                             sensor_msgs::msg::Image::ConstSharedPtr depth_msg) {
   if (!sensor) {
     LOG(ERROR) << "sensor required!";
     return;
   }
 
-  const auto timestamp_ns = color_msg->header.stamp.toNSec();
+  const auto timestamp_ns = rclcpp::Time(color_msg->header.stamp).nanoseconds();
   VLOG(5) << "processing images @ " << timestamp_ns << " [ns]";
 
   const auto sensor_frame = !bag_config.sensor_frame.empty()

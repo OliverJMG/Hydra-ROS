@@ -68,10 +68,11 @@ void declare_config(HydraRosPipeline::Config& config) {
   field(config.features, "features");
 }
 
-HydraRosPipeline::HydraRosPipeline(const ros::NodeHandle& nh, int robot_id)
-    : HydraPipeline(config::fromRos<PipelineConfig>(nh), robot_id),
-      config(config::checkValid(config::fromRos<Config>(nh))),
-      nh_(nh) {
+HydraRosPipeline::HydraRosPipeline(const rclcpp::NodeOptions& options, int robot_id)
+    : Node("hydra_ros_node", options),
+      HydraPipeline(loadPipelineConfig(), robot_id),
+              // config() {
+      config(config::fromRos<Config>(this->get_node_parameters_interface())) {
   LOG(INFO) << "Starting Hydra-ROS with input configuration\n"
             << config::toString(config.input);
 }
@@ -93,18 +94,20 @@ void HydraRosPipeline::init() {
 
   if (pipeline_config.enable_lcd) {
     initLCD();
-    bow_sub_.reset(new BowSubscriber(nh_));
+    bow_sub_.reset(new BowSubscriber(rclcpp::NodeOptions()));
   }
-
-  ros::NodeHandle bnh(nh_, "backend");
-  backend_->addSink(std::make_shared<RosBackendPublisher>(bnh));
-  const auto zmq_config = config::fromRos<ZmqSink::Config>(bnh, "zmq_sink");
+  rclcpp::NodeOptions b_options{};
+  const auto backend_publisher = std::make_shared<RosBackendPublisher>(b_options);
+  backend_publisher->configure();
+  // ros::NodeHandle bnh(nh_, "backend");
+  backend_->addSink(backend_publisher);
+  const auto zmq_config = config::fromRos<ZmqSink::Config>(backend_publisher->shared_from_this(), "zmq_sink");
   backend_->addSink(std::make_shared<ZmqSink>(zmq_config));
 
   if (config.enable_frontend_output) {
     CHECK(frontend_) << "Frontend module required!";
     frontend_->addSink(
-        std::make_shared<RosFrontendPublisher>(ros::NodeHandle(nh_, "frontend")));
+        std::make_shared<RosFrontendPublisher>(rclcpp::NodeOptions()));
   }
 
   input_module_ =
@@ -123,10 +126,18 @@ void HydraRosPipeline::stop() {
   backend_->stop();
 
   HydraPipeline::stop();
+  rclcpp::shutdown();
+}
+
+PipelineConfig HydraRosPipeline::loadPipelineConfig() {
+  auto cfg = config::fromYamlFile<PipelineConfig>(
+              this->get_parameter("labelspace_path").as_string());
+  config::updateFromRos<PipelineConfig>(cfg, this->get_node_parameters_interface());
+  return cfg;
 }
 
 void HydraRosPipeline::initLCD() {
-  auto lcd_config = config::fromRos<LoopClosureConfig>(nh_);
+  auto lcd_config = config::fromRos<LoopClosureConfig>(this->shared_from_this());
   lcd_config.detector.num_semantic_classes = GlobalInfo::instance().getTotalLabels();
   VLOG(1) << "Number of classes for LCD: " << lcd_config.detector.num_semantic_classes;
   config::checkValid(lcd_config);

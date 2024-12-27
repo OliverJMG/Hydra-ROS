@@ -39,22 +39,23 @@
 
 namespace hydra {
 
-using pose_graph_tools_msgs::BowQueries;
+using nav_interfaces::msg::BowQueries;
 
-BowSubscriber::BowSubscriber(const ros::NodeHandle& nh) : nh_(nh) {
+BowSubscriber::BowSubscriber(const rclcpp::NodeOptions& options) : Node("bow_subscriber", options) {
   auto queue = PipelineQueues::instance().bow_queue;
   if (queue) {
-    sub_ = nh_.subscribe("bow_vectors", 100, &BowSubscriber::callback, this);
+    sub_ = this->create_subscription<nav_interfaces::msg::BowQueries>(
+      "bow_vectors", 100, std::bind(&BowSubscriber::callback, this, std::placeholders::_1));
   }
 }
 
-void BowSubscriber::callback(const BowQueries& msg) {
+void BowSubscriber::callback(BowQueries::ConstSharedPtr msg) {
   auto queue = PipelineQueues::instance().bow_queue;
   if (!queue) {
     return;
   }
 
-  for (const auto& query : msg.queries) {
+  for (const auto& query : msg->queries) {
     queue->push(
         std::make_shared<pose_graph_tools::BowQuery>(pose_graph_tools::fromMsg(query)));
   }

@@ -107,8 +107,8 @@ BasisPointPlugin::BasisPointPlugin(const Config& config,
                                    const std::string& name)
     : VisualizerPlugin(node, name),
       config(config::checkValid(config)),
-      pub_(node_->create_publisher<MarkerArray>("", 1)),
-      layer_config_("graph"),
+      pub_(node_->create_publisher<MarkerArray>("~/" + name, 1)),
+      layer_config_(node->get_node_parameters_interface(), name + "/graph"),
       colormap_(config.colormap) {}
 
 void BasisPointPlugin::draw(const std_msgs::msg::Header& header,

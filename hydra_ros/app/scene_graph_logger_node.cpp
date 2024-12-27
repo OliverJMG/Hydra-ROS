@@ -33,12 +33,12 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #include "hydra_ros/utils/scene_graph_logger.h"
-
+// TODO(Oliver): convert this to a ROS2 composable node
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "scene_graph_logger_node");
+  rclcpp::init(argc, argv);
 
-  ros::NodeHandle nh("~");
-  hydra::SceneGraphLogger node(nh);
-  node.spin();
+  auto node = std::make_shared<hydra::SceneGraphLogger>(rclcpp::NodeOptions());
+  rclcpp::spin(node);
+
   return 0;
 }

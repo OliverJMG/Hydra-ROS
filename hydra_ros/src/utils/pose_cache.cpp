@@ -47,7 +47,7 @@
 
 namespace hydra {
 
-void fillBuffer(const rosbag::Bag& bag,
+void fillBuffer(std::unique_ptr<rosbag2_cpp::Reader> reader,
                 bool static_only,
                 std::shared_ptr<tf2::BufferCore>& buffer) {
   std::vector<std::string> topics{"/tf_static"};
@@ -55,37 +55,48 @@ void fillBuffer(const rosbag::Bag& bag,
     topics.push_back("/tf");
   }
 
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-  const auto bag_duration = view.getEndTime() - view.getBeginTime();
-  buffer = std::make_shared<tf2::BufferCore>(bag_duration + ros::Duration(10.0));
+  rosbag2_storage::StorageFilter filter;
+  filter.topics = topics;
+  reader->set_filter(filter);
 
-  for (const auto& m : view) {
-    const auto msg = m.instantiate<tf2_msgs::TFMessage>();
+  const auto bag_duration = reader->get_metadata().duration;
+  buffer = std::make_shared<tf2::BufferCore>(bag_duration + std::chrono::seconds(10));
+
+  while (reader->has_next()) {
+    rosbag2_storage::SerializedBagMessageSharedPtr m = reader->read_next();
+    rclcpp::SerializedMessage serialized_msg(*m->serialized_data);
+    rclcpp::Serialization<tf2_msgs::msg::TFMessage> raw_serialization;
+    auto msg = std::make_unique<tf2_msgs::msg::TFMessage>();
+    raw_serialization.deserialize_message(&serialized_msg, msg.get());
     if (!msg) {
-      LOG(ERROR) << "Found invalid message on '" << m.getTopic() << "'";
+      LOG(ERROR) << "Found invalid message on '" << m->topic_name << "'";
       continue;
     }
 
-    const bool is_static = m.getTopic() == "/tf_static";
+    const bool is_static = m->topic_name == "/tf_static";
     for (const auto& tf : msg->transforms) {
       buffer->setTransform(tf, "rosbag", is_static);
     }
   }
+  reader->close();
 }
 
 PoseCache::PoseCache(const PoseCache::Config& config) {
   config::checkValid(config);
   LOG(INFO) << "Loading poses from " << config.bag_path;
 
-
-  rosbag::Bag bag;
-  bag.open(config.bag_path, rosbag::bagmode::Read);
-  fillBuffer(bag, config.static_only, buffer_);
-  bag.close();
+  rosbag2_storage::StorageOptions storage_options;
+  storage_options.uri = config.bag_path;
+  
+  auto reader = rosbag2_transport::ReaderWriterFactory::make_reader(storage_options);
+  reader->open(storage_options);
+  fillBuffer(std::move(reader), config.static_only, buffer_);
 }
 
-PoseCache::PoseCache(const rosbag::Bag& bag, bool static_only) {
-  fillBuffer(bag, static_only, buffer_);
+PoseCache::PoseCache(const rosbag2_storage::StorageOptions& options, bool static_only) {
+  auto reader = rosbag2_transport::ReaderWriterFactory::make_reader(options);
+  reader->open(options);
+  fillBuffer(std::move(reader), static_only, buffer_);
 }
 
 PoseCache::PoseResult PoseCache::lookupPose(uint64_t timestamp_ns,
@@ -93,11 +104,10 @@ PoseCache::PoseResult PoseCache::lookupPose(uint64_t timestamp_ns,
                                             const std::string& from_frame) const {
   PoseResult result;
   try {
-    ros::Time stamp;
-    stamp.fromNSec(timestamp_ns);
+    tf2::TimePoint stamp{std::chrono::nanoseconds(timestamp_ns)};
     auto msg = buffer_->lookupTransform(to_frame, from_frame, stamp);
 
-    geometry_msgs::Pose curr_pose;
+    geometry_msgs::msg::Pose curr_pose;
     curr_pose.position.x = msg.transform.translation.x;
     curr_pose.position.y = msg.transform.translation.y;
     curr_pose.position.z = msg.transform.translation.z;
@@ -105,7 +115,7 @@ PoseCache::PoseResult PoseCache::lookupPose(uint64_t timestamp_ns,
 
     result.valid = true;
     tf2::convert(curr_pose.position, result.to_p_from);
-    tf2::convert(curr_pose.orientation, result.to_R_from);
+    tf2::fromMsg(curr_pose.orientation, result.to_R_from);
     result.to_R_from.normalize();
   } catch (const tf2::TransformException& e) {
     LOG(ERROR) << "Unable to find pose @ " << timestamp_ns << " [ns] between '"

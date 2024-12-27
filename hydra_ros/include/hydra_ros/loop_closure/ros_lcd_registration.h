@@ -34,17 +34,23 @@
  * -------------------------------------------------------------------------- */
 #pragma once
 #include <hydra/loop_closure/registration.h>
+#include <nav_interfaces/srv/lcd_frame_registration.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace hydra::lcd {
 
 struct DsgAgentSolver : DsgRegistrationSolver {
-  DsgAgentSolver() = default;
+  DsgAgentSolver();
 
   virtual ~DsgAgentSolver() = default;
 
   RegistrationSolution solve(const DynamicSceneGraph& dsg,
                              const DsgRegistrationInput& match,
                              NodeId query_agent_id) const override;
+  
+ protected:
+  mutable rclcpp::Node::SharedPtr node_;
+  rclcpp::Client<nav_interfaces::srv::LcdFrameRegistration>::SharedPtr frame_reg_client_;
 };
 
 }  // namespace hydra::lcd

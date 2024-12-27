@@ -33,11 +33,14 @@
  * purposes notwithstanding any copyright notation herein.
  * -------------------------------------------------------------------------- */
 #pragma once
+
+#include <config_utilities/config.h>
 #include <hydra/active_window/reconstruction_module.h>
 #include <hydra_visualizer/color/colormap_utilities.h>
 #include <hydra_visualizer/color/mesh_color_adaptor.h>
 #include <hydra_visualizer/utils/marker_group_pub.h>
-#include <image_transport/image_transport.h>
+#include <kimera_pgmo_msgs/msg/kimera_pgmo_mesh.hpp>
+#include <image_transport/image_transport.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
@@ -53,22 +56,27 @@ struct publisher_type_trait<ImagePublisherGroup> {
 };
 
 struct ImagePublisherGroup : public LazyPublisherGroup<ImagePublisherGroup> {
-  using Base = LazyPublisherGroup<ImagePublisherGroup>;
-  explicit ImagePublisherGroup(ros::NodeHandle& nh);
+using Base = LazyPublisherGroup<ImagePublisherGroup>;
+ public:
+  explicit ImagePublisherGroup(const std::string& name, const std::string& ns);
+  
   virtual ~ImagePublisherGroup() = default;
+  
   bool shouldPublish(const image_transport::Publisher& pub) const;
+  
   image_transport::Publisher makePublisher(const std::string& topic) const;
+  
   void publishMsg(const image_transport::Publisher& pub,
-                  const sensor_msgs::msg::Image::SharedPtr& img) const;
+                  sensor_msgs::msg::Image::SharedPtr img) const;
 
  private:
-  mutable image_transport::ImageTransport transport_;
+  mutable rclcpp::Node::SharedPtr node_;
 };
 
 class ReconstructionVisualizer : public ReconstructionModule::Sink {
  public:
   struct Config {
-    std::string ns = "~reconstruction";
+    std::string ns = "reconstruction";
     double min_weight = 0.0;
     double max_weight = 10.0;
     double marker_alpha = 0.5;
@@ -101,11 +109,13 @@ class ReconstructionVisualizer : public ReconstructionModule::Sink {
  protected:
   void publishMesh(const ActiveWindowOutput& output) const;
 
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<kimera_pgmo_msgs::msg::KimeraPgmoMesh>::SharedPtr active_mesh_pub_;
+  
   MarkerGroupPub pubs_;
-  ros::Publisher active_mesh_pub_;
   ImagePublisherGroup image_pubs_;
   RosPublisherGroup<sensor_msgs::msg::PointCloud2> cloud_pubs_;
+  
   const visualizer::RangeColormap colormap_;
   const visualizer::CategoricalColormap label_colormap_;
   std::shared_ptr<MeshColoring> mesh_coloring_;

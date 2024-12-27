@@ -62,7 +62,7 @@ void declare_config(GvdOccupancyPublisher::Config& config) {
 }
 
 GvdOccupancyPublisher::GvdOccupancyPublisher(const Config& config)
-    : OccupancyPublisher<places::GvdBlock>(config, ros::NodeHandle(config.ns)),
+    : OccupancyPublisher<places::GvdBlock>(config, "gvd", "hydra_ros_node"),
       config(config::checkValid(config)) {}
 
 std::string GvdOccupancyPublisher::printInfo() const {
@@ -76,13 +76,4 @@ void GvdOccupancyPublisher::call(uint64_t timestamp_ns,
   publish(timestamp_ns, world_T_body.cast<double>(), gvd);
 }
 
-namespace {
-
-static const auto registration_ =
-    config::RegistrationWithConfig<GvdPlaceExtractor::Sink,
-                                   GvdOccupancyPublisher,
-                                   GvdOccupancyPublisher::Config>(
-        "GvdOccupancyPublisher");
-
-}
 }  // namespace hydra

@@ -11,7 +11,7 @@ namespace hydra {
 class FeatureScoreColor : public GraphColorAdaptor {
  public:
   struct Config {
-    std::string ns = "~";
+    std::string ns = "";
     float min_score = 0.0f;
     float max_score = 1.0f;
     bool use_fixed_range = false;
@@ -28,8 +28,8 @@ class FeatureScoreColor : public GraphColorAdaptor {
   void setFeature(const Eigen::VectorXf& feature);
 
  private:
-  ros::NodeHandle nh_;
-  ros::Subscriber sub_;
+  // ros::NodeHandle nh_;
+  rclcpp::GenericSubscription::SharedPtr sub_;
   struct FeatureTrampoline;
   std::unique_ptr<FeatureTrampoline> trampoline_;
 
@@ -64,7 +64,7 @@ class NearestFeatureColor : public GraphColorAdaptor {
                             const spark_dsg::SceneGraphNode& node) const override;
 
  private:
-  ros::NodeHandle nh_;
+  // ros::NodeHandle nh_;
   std::unique_ptr<EmbeddingDistance> metric_;
   std::unique_ptr<EmbeddingGroup> features_;
   const visualizer::DiscreteColormap colormap_;
@@ -89,7 +89,7 @@ class NearestFeatureLabel : public visualizer::GraphLabelAdaptor {
   std::string getLabel(const spark_dsg::SceneGraphNode& node) const override;
 
  private:
-  ros::NodeHandle nh_;
+  // ros::NodeHandle nh_;
   std::unique_ptr<EmbeddingDistance> metric_;
   std::unique_ptr<EmbeddingGroup> features_;
 

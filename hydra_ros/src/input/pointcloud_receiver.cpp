@@ -19,13 +19,14 @@ PointcloudReceiver::PointcloudReceiver(const Config& config,
     : RosDataReceiver(config, sensor_name), config(config) {}
 
 bool PointcloudReceiver::initImpl() {
-  sub_ = nh_.subscribe(
-      "pointcloud", config.queue_size, &PointcloudReceiver::callback, this);
+  sub_ = node_->create_subscription<sensor_msgs::msg::PointCloud2>(
+      "pointcloud", config.queue_size, 
+      std::bind(&PointcloudReceiver::callback, this, std::placeholders::_1));
   return true;
 }
 
-void PointcloudReceiver::callback(const sensor_msgs::PointCloud2& msg) {
-  const auto timestamp_ns = msg.header.stamp.toNSec();
+void PointcloudReceiver::callback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
+  const auto timestamp_ns = rclcpp::Time(msg->header.stamp).nanoseconds();
   VLOG(5) << "[Hydra Reconstruction] Got raw pointcloud input @ " << timestamp_ns
           << " [ns]";
 
@@ -34,10 +35,10 @@ void PointcloudReceiver::callback(const sensor_msgs::PointCloud2& msg) {
   }
 
   auto packet = std::make_shared<CloudInputPacket>(timestamp_ns, sensor_name_);
-  fillPointcloudPacket(msg, *packet, false);
+  fillPointcloudPacket(*msg, *packet, false);
   // TODO(nathan) this is brittle, but at least handles kitti
   packet->in_world_frame =
-      msg.header.frame_id == GlobalInfo::instance().getFrames().odom;
+      msg->header.frame_id == GlobalInfo::instance().getFrames().odom;
   queue.push(packet);
 }
 

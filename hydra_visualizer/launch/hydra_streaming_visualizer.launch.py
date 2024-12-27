@@ -1,8 +1,8 @@
-import launch
+from launch_ros.parameter_descriptions import ParameterFile
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetLaunchConfiguration
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, Command, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition
 
@@ -55,7 +55,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('verbosity', default_value='0', description='Verbosity level'),
         DeclareLaunchArgument('visualizer_debug', default_value='false', description='Enable debugger for visualizer'),
-        DeclareLaunchArgument('visualizer_roslog_destination', default_value='log', description='ROS log destination'),
+        DeclareLaunchArgument('visualizer_roslog_destination', default_value='screen', description='ROS log destination'),
         DeclareLaunchArgument('visualizer_launch_prefix', default_value='', description='Launch prefix for debugging'),
         SetLaunchConfiguration('visualizer_launch_prefix', 'gdb -ex run --args', 
                                condition=IfCondition(LaunchConfiguration('visualizer_debug'))),
@@ -63,33 +63,21 @@ def generate_launch_description():
         Node(
             package='hydra_visualizer',
             executable='hydra_visualizer_node',
-            name='hydra_dsg_visualizer',
+            # name='hydra_dsg_visualizer',
             output=LaunchConfiguration('visualizer_roslog_destination'),
             prefix=LaunchConfiguration('visualizer_launch_prefix'),
             arguments=[
                 '-alsologtostderr',
                 '-colorlogtostderr',
-                # '-v=' + LaunchConfiguration('verbosity')
+                ['-v=', LaunchConfiguration('verbosity')]
             ],
             parameters=[
                 {'visualizer_frame': LaunchConfiguration('visualizer_frame')},
                 {'graph.type': LaunchConfiguration('graph_type')},
                 {'graph.url': LaunchConfiguration('visualizer_zmq_url')},
-                PathJoinSubstitution([
-                    FindPackageShare('hydra_visualizer'),
-                    'config',
-                    'visualizer_config.yaml'
-                ]),
-                PathJoinSubstitution([
-                    FindPackageShare('hydra_visualizer'),
-                    'config',
-                    'visualizer_plugins.yaml'
-                ]),
-                PathJoinSubstitution([
-                    FindPackageShare('hydra_visualizer'),
-                    'config',
-                    'external_plugins.yaml'
-                ])
+                ParameterFile(LaunchConfiguration('visualizer_config_path')),
+                ParameterFile(LaunchConfiguration('visualizer_plugins_path'), allow_substs=True),
+                ParameterFile(LaunchConfiguration('external_plugins_path'))
             ]
         )
     ])

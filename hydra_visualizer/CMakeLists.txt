@@ -25,7 +25,7 @@ find_package(visualization_msgs REQUIRED)
 # )
 
 add_library(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME} SHARED
   src/dsg_visualizer.cpp
   src/scene_graph_renderer.cpp
   src/color/colormap_utilities.cpp
@@ -89,6 +89,18 @@ install(
   RUNTIME DESTINATION bin
 )
 
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  hydra_msgs
+  kimera_pgmo_msgs
+  rclcpp
+  std_msgs
+  std_srvs
+  tf2_eigen
+  tf2_ros
+  visualization_msgs
+)
+
 install(
   TARGETS hydra_visualizer_node
   DESTINATION lib/${PROJECT_NAME}
@@ -97,7 +109,7 @@ install(
 install(DIRECTORY include/ 
         DESTINATION include/)
 
-install(DIRECTORY launch config
+install(DIRECTORY launch config rviz
         DESTINATION share/${PROJECT_NAME}/)
 
 ament_package()
