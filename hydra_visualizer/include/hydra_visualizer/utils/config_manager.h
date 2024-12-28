@@ -36,6 +36,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <spark_dsg/dynamic_scene_graph.h>
 #include <std_msgs/msg/string.hpp>
+#include <config_utilities/printing.h>
 
 #include "hydra_visualizer/color/graph_color_adaptors.h"
 #include "hydra_visualizer/utils/config_wrapper.h"
@@ -100,8 +101,11 @@ class LayerConfig {
               spark_dsg::LayerId layer)
       : color(std::make_unique<ColorManager>(node, layer)),
         label(std::make_unique<LabelManager>(node)),
-        config(std::make_unique<ConfigWrapper<ConfigT>>(path, ns)),
+        config(nullptr),
         node_(node) {
+    ConfigT cfg = config::fromYamlFile<ConfigT>(path);
+    config::updateFromRos<ConfigT>(cfg, node, ns);
+    config = std::make_unique<ConfigWrapper<ConfigT>>(cfg);
     setCallback();
   }
 

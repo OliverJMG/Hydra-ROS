@@ -232,9 +232,7 @@ void ConfigManager::clearChangeFlags() {
 const VisualizerConfig& ConfigManager::getVisualizerConfig() const {
   if (!visualizer_config_) {
     visualizer_config_ =
-        std::make_shared<ConfigWrapper<VisualizerConfig>>(
-          "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/visualizer_config.yaml",
-          "");
+        std::make_shared<ConfigWrapper<VisualizerConfig>>(node_->get_node_parameters_interface());
   }
 
   return visualizer_config_->get();
@@ -243,10 +241,10 @@ const VisualizerConfig& ConfigManager::getVisualizerConfig() const {
 const StaticLayerConfig& ConfigManager::getLayerConfig(LayerId layer) const {
   auto iter = layers_.find(layer);
   if (iter == layers_.end()) {
-    // const auto ns = "config/layer" + std::to_string(layer);
+    const auto ns = "config/layer" + std::to_string(layer);
     iter = layers_.emplace(layer, StaticLayerConfig(
         "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/layer_defaults.yaml", 
-        "", node_, layer)).first;
+        ns, node_, layer)).first;
   }
 
   return iter->second;
@@ -255,10 +253,10 @@ const StaticLayerConfig& ConfigManager::getLayerConfig(LayerId layer) const {
 const DynamicLayerConfig& ConfigManager::getDynamicLayerConfig(LayerId layer) const {
   auto iter = dynamic_layers_.find(layer);
   if (iter == dynamic_layers_.end()) {
-    // const std::string ns = "config/dynamic_layer/layer" + std::to_string(layer);
+    const std::string ns = "config/dynamic_layers/layer" + std::to_string(layer);
     iter = dynamic_layers_.emplace(layer, DynamicLayerConfig(
         "/workspaces/ros2_ws/src/hydra_ros/hydra_visualizer/config/dynamic_layer_defaults.yaml",
-        "", node_, layer)).first;
+        ns, node_, layer)).first;
   }
 
   return iter->second;
